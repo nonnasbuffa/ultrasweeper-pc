@@ -1,10 +1,11 @@
 {
   "name": "ultrasweeper-pc-build",
   "private": true,
-  "description": "Packs the desktop game into a single UltraSweeper.exe.",
+  "description": "Packs the desktop game into UltraSweeper.exe (Windows) and an AppImage and .deb (Linux).",
   "scripts": {
     "sync": "node scripts/sync-app.js",
-    "build": "electron-builder --win portable --x64 --publish never"
+    "build": "electron-builder --win portable --x64 --publish never",
+    "build:linux": "electron-builder --linux AppImage deb --x64 --publish never"
   },
   "devDependencies": {
     "electron-builder": "24.13.3"
@@ -28,6 +29,20 @@
     },
     "portable": {
       "artifactName": "UltraSweeper.exe"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "build/icon.png",
+      "category": "Game",
+      "maintainer": "UltraSweeper",
+      "synopsis": "A customizable offline minesweeper game",
+      "executableName": "ultrasweeper"
+    },
+    "appImage": {
+      "artifactName": "UltraSweeper.AppImage"
+    },
+    "deb": {
+      "artifactName": "UltraSweeper.deb"
     }
   }
 }

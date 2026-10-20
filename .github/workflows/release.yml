@@ -1,7 +1,8 @@
-name: Build UltraSweeper exe
+name: Build UltraSweeper for PC
 
-# Pushing a version tag (for example v1.0.1) builds UltraSweeper.exe and publishes it as a Release.
-# It can also be run by hand from the Actions tab; then the exe is only kept as a downloadable artifact.
+# Pushing a version tag (for example v1.0.4) builds UltraSweeper for Windows (exe) and Linux
+# (AppImage and .deb) and publishes them together as a Release.
+# It can also be run by hand from the Actions tab; then the files are only kept as downloadable artifacts.
 on:
   push:
     tags:
@@ -12,7 +13,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,23 +26,90 @@ jobs:
       - name: Install build tools
         run: npm ci
 
+      - name: Use the tag as the app version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: node -e "const fs=require('fs');const f='app/package.json';const p=JSON.parse(fs.readFileSync(f));p.version=process.env.GITHUB_REF_NAME.replace(/^v/,'');fs.writeFileSync(f,JSON.stringify(p,null,2)+'\n')"
+
       - name: Build UltraSweeper.exe
         run: npm run build
 
-      - name: Keep the exe as an artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: UltraSweeper-exe
+          name: UltraSweeper-windows
           path: dist/UltraSweeper.exe
 
-      - name: Publish the Release
+  linux:
+    # Ubuntu 22.04 matches Linux Mint 21, so the build also runs on older Mint versions.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install build tools
+        run: npm ci
+
+      - name: Use the tag as the app version
         if: startsWith(github.ref, 'refs/tags/')
-        shell: bash
+        run: node -e "const fs=require('fs');const f='app/package.json';const p=JSON.parse(fs.readFileSync(f));p.version=process.env.GITHUB_REF_NAME.replace(/^v/,'');fs.writeFileSync(f,JSON.stringify(p,null,2)+'\n')"
+
+      - name: Build UltraSweeper.AppImage and UltraSweeper.deb
+        run: npm run build:linux
+
+      - name: Check the .deb installs and the game starts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb ./dist/UltraSweeper.deb
+          set +e
+          xvfb-run -a timeout 20 ultrasweeper
+          code=$?
+          set -e
+          # 124 means it was still running when the 20 seconds ran out, i.e. it started fine.
+          if [ "$code" != "124" ]; then echo "The game exited early with code $code"; exit 1; fi
+          echo "The installed game ran for 20 seconds without crashing."
+
+      - name: Check the AppImage starts
+        continue-on-error: true
+        run: |
+          sudo apt-get install -y -qq libfuse2
+          chmod +x dist/UltraSweeper.AppImage
+          set +e
+          xvfb-run -a timeout 20 ./dist/UltraSweeper.AppImage
+          code=$?
+          set -e
+          if [ "$code" != "124" ]; then echo "The AppImage exited early with code $code"; exit 1; fi
+          echo "The AppImage ran for 20 seconds without crashing."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UltraSweeper-linux
+          path: |
+            dist/UltraSweeper.AppImage
+            dist/UltraSweeper.deb
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: files
+          merge-multiple: true
+
+      - name: Publish the Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/UltraSweeper.exe \
+          gh release create "$GITHUB_REF_NAME" files/UltraSweeper.exe files/UltraSweeper.AppImage files/UltraSweeper.deb \
+            --repo "$GITHUB_REPOSITORY" \
             --title "UltraSweeper ${GITHUB_REF_NAME#v}" \
-            --notes "Download **UltraSweeper.exe** below and double-click it to play. No install needed.
+            --notes "**Windows:** download **UltraSweeper.exe** and double-click it. No install needed.
+          If Windows shows \"Windows protected your PC\", click **More info** → **Run anyway** (the exe isn't code-signed).
 
-          If Windows shows \"Windows protected your PC\", click **More info** → **Run anyway** (the exe isn't code-signed)."
+          **Linux Mint / Ubuntu:** download **UltraSweeper.deb**, double-click it and click **Install Package**. UltraSweeper then appears in your app menu under Games.
+          Or download **UltraSweeper.AppImage**, right-click it → Properties → Permissions → tick **Allow executing file as program**, then double-click it."
