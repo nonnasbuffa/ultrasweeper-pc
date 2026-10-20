@@ -49,6 +49,7 @@
               <svg class="admin-toggle-icon"><use href="#icon-shield" /></svg><span>Admin</span>
             </button>
             <button id="menu-stats" class="legacy-toggle stats-toggle icon-toggle" type="button" aria-label="Stats" title="Stats"><svg class="admin-toggle-icon"><use href="#icon-trophy" /></svg></button>
+            <button id="menu-appearance" class="legacy-toggle appearance-toggle icon-toggle" type="button" aria-label="Appearance" title="Appearance"><svg class="admin-toggle-icon"><use href="#icon-palette" /></svg></button>
             <button id="music-toggle" class="legacy-toggle music-toggle" type="button" aria-pressed="true">
               <svg class="admin-toggle-icon"><use href="#icon-music" /></svg><span class="long-label">Music</span><b>On</b>
             </button>
@@ -117,9 +118,30 @@
     </main>
 
     <footer class="xp-taskbar">
-      <span class="xp-task" aria-hidden="true"><img src="assets/face.svg" alt="" />UltraSweeper</span>
-      <span class="xp-tray"><time id="xp-clock"></time></span>
+      <button id="xp-start" class="xp-start" type="button" aria-haspopup="menu" aria-expanded="false"><img src="assets/mine.svg" alt="" /><span>start</span></button>
+      <div class="xp-quicklaunch">
+        <button class="xp-app" type="button" data-app="stats" title="Leaderboard" aria-label="Leaderboard"><svg><use href="#icon-trophy" /></svg></button>
+        <button class="xp-app" type="button" data-app="appearance" title="Appearance" aria-label="Appearance"><svg><use href="#icon-palette" /></svg></button>
+        <button class="xp-app" type="button" data-app="custom" title="Custom game" aria-label="Custom game"><img src="assets/flag.svg" alt="" /></button>
+      </div>
+      <span class="xp-tray">
+        <button id="xp-volume" class="xp-tray-icon" type="button" title="Music on" aria-label="Music" aria-pressed="true"><svg><use href="#icon-music" /></svg></button>
+        <time id="xp-clock"></time>
+      </span>
     </footer>
+
+    <nav id="xp-start-menu" class="xp-start-menu hidden" aria-label="Start menu">
+      <div class="xp-start-head"><img src="assets/face.svg" alt="" /><span>UltraSweeper</span></div>
+      <div class="xp-start-items">
+        <button type="button" data-app="normal"><img src="assets/face.svg" alt="" /><span><b>New game</b><small>Beginner · 9 × 9 · 10 mines</small></span></button>
+        <button type="button" data-app="custom"><img src="assets/flag.svg" alt="" /><span><b>Custom game</b><small>Build your own board</small></span></button>
+        <hr />
+        <button type="button" data-app="stats"><svg class="xp-start-icon trophy"><use href="#icon-trophy" /></svg><span><b>Leaderboard</b></span></button>
+        <button type="button" data-app="appearance"><svg class="xp-start-icon palette"><use href="#icon-palette" /></svg><span><b>Appearance</b></span></button>
+        <button type="button" data-app="music"><svg class="xp-start-icon music"><use href="#icon-music" /></svg><span><b id="xp-start-music">Turn music off</b></span></button>
+      </div>
+      <div class="xp-start-foot"><button type="button" data-app="modern"><span>Switch to modern look</span></button></div>
+    </nav>
 
     <section id="custom-screen" class="dialog-screen hidden" aria-labelledby="custom-title" role="dialog" aria-modal="true">
       <form id="custom-form" class="dialog-card" novalidate>

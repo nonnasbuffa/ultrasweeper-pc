@@ -25,6 +25,8 @@ const legacyToggle = document.querySelector('#legacy-toggle');
 const musicStorageKey = 'offline-minesweeper-music-v1';
 const musicToggle = document.querySelector('#music-toggle');
 const gameMusicButton = document.querySelector('#game-music');
+const xpStart = document.querySelector('#xp-start');
+const xpStartMenu = document.querySelector('#xp-start-menu');
 const songStorageKey = 'offline-minesweeper-songs-v1';
 const songLooks = ['modern', 'legacy'];
 const builtInSongNames = { modern: 'Clear Signal', legacy: 'Classic Click' };
@@ -134,10 +136,17 @@ window.addEventListener('resize', () => {
   makeRoomForAdminPanel();
 });
 faceButton.addEventListener('click', restartGame);
-document.querySelector('#open-settings').addEventListener('click', () => {
-  renderAssets();
-  renderSongPicker();
-  openDialog('settings');
+document.querySelector('#open-settings').addEventListener('click', openAppearance);
+document.querySelector('#menu-appearance').addEventListener('click', openAppearance);
+// Legacy taskbar: Start menu, quick-launch apps and the speaker in the tray.
+xpStart.addEventListener('click', () => toggleStartMenu());
+document.querySelector('#xp-volume').addEventListener('click', () => setMusic(!musicOn));
+document.querySelectorAll('.xp-taskbar [data-app], #xp-start-menu [data-app]').forEach(button => button.addEventListener('click', () => {
+  toggleStartMenu(false);
+  runApp(button.dataset.app);
+}));
+document.addEventListener('pointerdown', event => {
+  if (!xpStartMenu.classList.contains('hidden') && !xpStartMenu.contains(event.target) && !xpStart.contains(event.target)) toggleStartMenu(false);
 });
 document.querySelector('#restore-assets').addEventListener('click', () => {
   assets = {};
@@ -207,7 +216,9 @@ Object.values(dialogs).forEach(dialog => dialog.addEventListener('mousedown', ev
 }));
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
-  if (openDialogName) {
+  if (!xpStartMenu.classList.contains('hidden')) {
+    toggleStartMenu(false);
+  } else if (openDialogName) {
     closeDialog();
   } else if (!adminPanel.classList.contains('hidden')) {
     toggleAdminPanel(false);
@@ -1019,7 +1030,30 @@ function applyLegacyMode() {
   document.body.classList.toggle('legacy-mode', legacyMode);
   legacyToggle.setAttribute('aria-pressed', String(legacyMode));
   legacyToggle.querySelector('b').textContent = legacyMode ? 'On' : 'Off';
+  if (!legacyMode) toggleStartMenu(false);
   window.UltraMusic.setTrack(legacyMode ? 'legacy' : 'modern');
+}
+
+function openAppearance() {
+  renderAssets();
+  renderSongPicker();
+  openDialog('settings');
+}
+
+function toggleStartMenu(open = xpStartMenu.classList.contains('hidden')) {
+  xpStartMenu.classList.toggle('hidden', !open);
+  xpStart.classList.toggle('active', open);
+  xpStart.setAttribute('aria-expanded', String(open));
+}
+
+// The "apps" on the legacy taskbar and Start menu.
+function runApp(name) {
+  if (name === 'normal') startGame(9, 9, 10);
+  else if (name === 'custom') openDialog('custom');
+  else if (name === 'stats') openStats();
+  else if (name === 'appearance') openAppearance();
+  else if (name === 'music') setMusic(!musicOn);
+  else if (name === 'modern') setLegacyMode(false);
 }
 
 function setMusic(value) {
@@ -1162,7 +1196,11 @@ function applyMusic() {
   musicToggle.querySelector('b').textContent = musicOn ? 'On' : 'Off';
   gameMusicButton.setAttribute('aria-pressed', String(musicOn));
   gameMusicButton.title = musicOn ? 'Music on' : 'Music off';
-  [musicToggle, gameMusicButton].forEach(button => button.querySelector('use').setAttribute('href', musicOn ? '#icon-music' : '#icon-music-off'));
+  const volume = document.querySelector('#xp-volume');
+  volume.setAttribute('aria-pressed', String(musicOn));
+  volume.title = musicOn ? 'Music on' : 'Music off';
+  document.querySelector('#xp-start-music').textContent = musicOn ? 'Turn music off' : 'Turn music on';
+  [musicToggle, gameMusicButton, volume, document.querySelector('[data-app="music"]')].forEach(button => button.querySelector('use').setAttribute('href', musicOn ? '#icon-music' : '#icon-music-off'));
   window.UltraMusic.setEnabled(musicOn);
 }
 
