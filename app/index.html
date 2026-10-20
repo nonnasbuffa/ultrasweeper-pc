@@ -117,31 +117,40 @@
       </section>
     </main>
 
-    <footer class="xp-taskbar">
-      <button id="xp-start" class="xp-start" type="button" aria-haspopup="menu" aria-expanded="false"><img src="assets/mine.svg" alt="" /><span>start</span></button>
-      <div class="xp-quicklaunch">
-        <button class="xp-app" type="button" data-app="stats" title="Leaderboard" aria-label="Leaderboard"><svg><use href="#icon-trophy" /></svg></button>
-        <button class="xp-app" type="button" data-app="appearance" title="Appearance" aria-label="Appearance"><svg><use href="#icon-palette" /></svg></button>
-        <button class="xp-app" type="button" data-app="custom" title="Custom game" aria-label="Custom game"><img src="assets/flag.svg" alt="" /></button>
-      </div>
+    <!-- Legacy look: a decorative Windows XP-style taskbar (a picture, nothing in it is clickable). -->
+    <footer class="xp-taskbar" aria-hidden="true">
+      <svg width="0" height="0" style="position: absolute">
+        <symbol id="xp-globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.6" fill="#2f8fe8" stroke="#0c4f9e" /><path d="M1.6 8h12.8M8 1.4c-2.4 2-2.4 11.2 0 13.2M8 1.4c2.4 2 2.4 11.2 0 13.2M2.6 4.6h10.8M2.6 11.4h10.8" fill="none" stroke="#d6efff" stroke-width=".9" /></symbol>
+        <symbol id="xp-folder" viewBox="0 0 16 16"><path d="M1 4.2h5l1.2 1.4H15v8.2H1z" fill="#f2c94c" stroke="#a87b12" stroke-width=".8" /><path d="M1 7h14v6.8H1z" fill="#ffe08a" stroke="#a87b12" stroke-width=".8" /></symbol>
+        <symbol id="xp-mail" viewBox="0 0 16 16"><rect x="1.2" y="3.4" width="13.6" height="9.4" rx="1" fill="#fff" stroke="#3a6fb5" /><path d="M1.6 4l6.4 5 6.4-5" fill="none" stroke="#3a6fb5" /></symbol>
+        <symbol id="xp-media" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.6" fill="#f08a1c" stroke="#9a4c00" /><path d="M6.4 5.2v5.6L11 8z" fill="#fff" /></symbol>
+        <symbol id="xp-computer" viewBox="0 0 16 16"><rect x="1.5" y="2" width="13" height="9" rx="1" fill="#cfe3f7" stroke="#3d5f8a" /><rect x="3" y="3.4" width="10" height="6.2" fill="#3a8be0" /><path d="M5.5 13.6h5M8 11v2.6" stroke="#3d5f8a" stroke-width="1.3" /></symbol>
+        <symbol id="xp-notepad" viewBox="0 0 16 16"><rect x="3" y="1.5" width="10" height="13" fill="#fff" stroke="#556" /><rect x="3" y="1.5" width="10" height="2.2" fill="#5a8fd8" /><path d="M5 6.4h6M5 8.6h6M5 10.8h4" stroke="#889" /></symbol>
+        <symbol id="xp-search" viewBox="0 0 16 16"><circle cx="6.6" cy="6.6" r="4.4" fill="#e8f4ff" stroke="#2b5d9b" stroke-width="1.4" /><path d="M9.8 9.8l4.4 4.4" stroke="#7a4b14" stroke-width="2.2" stroke-linecap="round" /></symbol>
+        <symbol id="xp-speaker" viewBox="0 0 16 16"><path d="M2 6h3l4-3.2v10.4L5 10H2z" fill="#fff" stroke="#24456e" stroke-width=".7" /><path d="M11 5.4c1.2 1.4 1.2 3.8 0 5.2M12.6 3.8c2 2.4 2 6 0 8.4" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round" /></symbol>
+        <symbol id="xp-network" viewBox="0 0 16 16"><rect x="1" y="3" width="7" height="5.4" fill="#cfe3f7" stroke="#24456e" stroke-width=".7" /><rect x="8" y="7.6" width="7" height="5.4" fill="#cfe3f7" stroke="#24456e" stroke-width=".7" /><rect x="2" y="4" width="5" height="3.4" fill="#3a8be0" /><rect x="9" y="8.6" width="5" height="3.4" fill="#3a8be0" /></symbol>
+        <symbol id="xp-shield" viewBox="0 0 16 16"><path d="M8 1.2l5.6 2.2v4.2c0 3.4-2.4 5.8-5.6 7.2-3.2-1.4-5.6-3.8-5.6-7.2V3.4z" fill="#3c8be6" stroke="#123f7a" stroke-width=".7" /><path d="M5 8l2.1 2.1L11.2 6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      </svg>
+      <span class="xp-start"><img src="assets/mine.svg" alt="" /><span>start</span></span>
+      <span class="xp-quicklaunch">
+        <svg><use href="#xp-globe" /></svg>
+        <svg><use href="#xp-folder" /></svg>
+        <svg><use href="#xp-mail" /></svg>
+        <svg><use href="#xp-media" /></svg>
+      </span>
+      <span class="xp-windows">
+        <span class="xp-window"><svg><use href="#xp-search" /></svg>Search Results</span>
+        <span class="xp-window"><svg><use href="#xp-folder" /></svg>My Documents</span>
+        <span class="xp-window"><svg><use href="#xp-computer" /></svg>My Computer</span>
+        <span class="xp-window"><svg><use href="#xp-notepad" /></svg>Untitled - Notepad</span>
+      </span>
       <span class="xp-tray">
-        <button id="xp-volume" class="xp-tray-icon" type="button" title="Music on" aria-label="Music" aria-pressed="true"><svg><use href="#icon-music" /></svg></button>
+        <svg class="xp-tray-icon"><use href="#xp-shield" /></svg>
+        <svg class="xp-tray-icon"><use href="#xp-network" /></svg>
+        <svg class="xp-tray-icon"><use href="#xp-speaker" /></svg>
         <time id="xp-clock"></time>
       </span>
     </footer>
-
-    <nav id="xp-start-menu" class="xp-start-menu hidden" aria-label="Start menu">
-      <div class="xp-start-head"><img src="assets/face.svg" alt="" /><span>UltraSweeper</span></div>
-      <div class="xp-start-items">
-        <button type="button" data-app="normal"><img src="assets/face.svg" alt="" /><span><b>New game</b><small>Beginner · 9 × 9 · 10 mines</small></span></button>
-        <button type="button" data-app="custom"><img src="assets/flag.svg" alt="" /><span><b>Custom game</b><small>Build your own board</small></span></button>
-        <hr />
-        <button type="button" data-app="stats"><svg class="xp-start-icon trophy"><use href="#icon-trophy" /></svg><span><b>Leaderboard</b></span></button>
-        <button type="button" data-app="appearance"><svg class="xp-start-icon palette"><use href="#icon-palette" /></svg><span><b>Appearance</b></span></button>
-        <button type="button" data-app="music"><svg class="xp-start-icon music"><use href="#icon-music" /></svg><span><b id="xp-start-music">Turn music off</b></span></button>
-      </div>
-      <div class="xp-start-foot"><button type="button" data-app="modern"><span>Switch to modern look</span></button></div>
-    </nav>
 
     <section id="custom-screen" class="dialog-screen hidden" aria-labelledby="custom-title" role="dialog" aria-modal="true">
       <form id="custom-form" class="dialog-card" novalidate>

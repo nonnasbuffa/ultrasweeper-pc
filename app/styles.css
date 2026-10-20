@@ -638,55 +638,40 @@ body.legacy-mode .xp-start {
   text-shadow: 1px 1px 1px #00000080;
 }
 body.legacy-mode .xp-start img { width: 20px; height: 20px; filter: drop-shadow(1px 1px 0 #00000060); }
-body.legacy-mode .xp-start:hover { filter: brightness(1.1); }
-body.legacy-mode .xp-start.active { background: linear-gradient(180deg, #1f6b1f, #2d8c2d 40%, #297f29); box-shadow: inset 1px 2px 3px #00000060; }
-/* Quick launch */
-body.legacy-mode .xp-quicklaunch { display: flex; align-items: center; gap: 2px; margin-left: 8px; padding: 0 8px 0 6px; border-left: 1px solid #1c4ec0; border-right: 1px solid #1c4ec0; box-shadow: inset 1px 0 #4f8ff0, 1px 0 #4f8ff0; }
-body.legacy-mode .xp-app { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 1px solid transparent; border-radius: 3px; background: transparent; }
-body.legacy-mode .xp-app:hover { border-color: #84b4ff; background: #ffffff26; }
-body.legacy-mode .xp-app:active { background: #00000026; }
-body.legacy-mode .xp-app svg, body.legacy-mode .xp-app img { width: 16px; height: 16px; }
-body.legacy-mode .xp-app[data-app="stats"] { color: #ffd34d; }
-body.legacy-mode .xp-app[data-app="appearance"] { color: #fff; }
-/* Tray */
-body.legacy-mode .xp-tray-icon { display: grid; place-items: center; width: 20px; height: 20px; margin-right: 8px; padding: 0; border: 0; background: transparent; color: #fff; }
-body.legacy-mode .xp-tray-icon svg { width: 15px; height: 15px; filter: drop-shadow(0 1px 0 #0005); }
-body.legacy-mode .xp-tray-icon:hover { filter: brightness(1.25); }
-/* Start menu */
-.xp-start-menu { display: none; }
-body.legacy-mode .xp-start-menu:not(.hidden) {
-  position: fixed;
-  z-index: 45;
-  bottom: calc(30px + var(--safe-bottom));
-  left: 0;
-  display: block;
-  width: min(290px, calc(100vw - 8px));
+/* The taskbar is a picture: nothing in it reacts to the mouse or touch. */
+body.legacy-mode .xp-taskbar { overflow: hidden; pointer-events: none; }
+body.legacy-mode .xp-taskbar svg { flex: none; width: 16px; height: 16px; }
+/* Quick launch icons */
+body.legacy-mode .xp-quicklaunch { display: flex; flex: none; align-items: center; gap: 7px; margin-left: 9px; padding: 0 10px 0 7px; border-left: 1px solid #1c4ec0; border-right: 1px solid #1c4ec0; box-shadow: inset 1px 0 #4f8ff0, 1px 0 #4f8ff0; }
+/* Open windows */
+/* Window buttons that don't fit wrap onto a hidden second line, so narrow screens just show fewer of them. */
+body.legacy-mode .xp-windows { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-content: flex-start; gap: 0 3px; height: 30px; min-width: 0; padding: 0 6px; overflow: hidden; }
+body.legacy-mode .xp-tray { flex: none; }
+/* Phones: no room for window buttons, so the bar shows Start, the quick-launch icons and the tray. */
+@media (max-width: 600px) { body.legacy-mode .xp-windows .xp-window { display: none; } }
+body.legacy-mode .xp-window {
+  display: flex;
+  flex: 0 1 160px;
+  align-items: center;
+  gap: 6px;
+  min-width: 110px;
+  height: 24px;
+  margin: 3px 0;
+  padding: 0 8px;
   overflow: hidden;
-  border: 1px solid #0c3fb0;
-  border-radius: 7px 7px 0 0;
-  background: #fff;
-  box-shadow: 3px -2px 10px #00000060;
-  font: 12px Tahoma, sans-serif;
-  animation: xp-start-open .14s ease-out;
+  border: 1px solid #1a4cc0;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #3c8af2 0%, #3a81ee 12%, #2f74e8 50%, #2c6de0 90%, #1f5fd6 100%);
+  box-shadow: inset 1px 1px #6fa8ff, inset -1px -1px #1848b0;
+  color: #fff;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px #0004;
+  white-space: nowrap;
 }
-@keyframes xp-start-open { from { opacity: 0; transform: translateY(8px); } }
-body.legacy-mode .xp-start-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: linear-gradient(180deg, #1c63d5, #3a87ee 12%, #2a6fdc 80%, #1b55c4); color: #fff; font: bold 15px "Trebuchet MS", Tahoma, sans-serif; text-shadow: 1px 1px 1px #0007; }
-body.legacy-mode .xp-start-head img { width: 38px; height: 38px; padding: 3px; border: 2px solid #d8e6ff; border-radius: 4px; background: #fff; }
-body.legacy-mode .xp-start-items { display: grid; padding: 6px 4px; border-top: 2px solid #f4a64a; }
-body.legacy-mode .xp-start-items button { display: flex; align-items: center; gap: 9px; padding: 5px 8px; border: 0; border-radius: 2px; background: transparent; color: #000; text-align: left; }
-body.legacy-mode .xp-start-items button:hover { background: #316ac5; color: #fff; }
-body.legacy-mode .xp-start-items button:hover small { color: #dfe9ff; }
-body.legacy-mode .xp-start-items img, body.legacy-mode .xp-start-icon { width: 24px; height: 24px; flex: none; }
-body.legacy-mode .xp-start-icon.trophy { color: #c08a00; }
-body.legacy-mode .xp-start-icon.palette { color: #8a4ac0; }
-body.legacy-mode .xp-start-icon.music { color: #1b5fc1; }
-body.legacy-mode .xp-start-items button:hover .xp-start-icon { color: #fff; }
-body.legacy-mode .xp-start-items b { display: block; font-weight: bold; }
-body.legacy-mode .xp-start-items small { display: block; color: #666; font-size: 11px; }
-body.legacy-mode .xp-start-items hr { margin: 4px 6px; border: 0; border-top: 1px solid #d6d6d6; }
-body.legacy-mode .xp-start-foot { display: flex; justify-content: flex-end; padding: 5px 8px; background: linear-gradient(180deg, #4282e8, #2a6fdc 40%, #1b55c4); }
-body.legacy-mode .xp-start-foot button { padding: 3px 8px; border: 1px solid transparent; border-radius: 3px; background: transparent; color: #fff; font: 11px Tahoma, sans-serif; }
-body.legacy-mode .xp-start-foot button:hover { border-color: #8fb8ff; background: #ffffff22; }
+body.legacy-mode .xp-window:first-child { background: linear-gradient(180deg, #1c4fc4, #1e52d0 20%, #1d4fc7); box-shadow: inset 1px 1px 2px #00000060; }
+/* Tray icons */
+body.legacy-mode .xp-tray-icon { margin-right: 6px; filter: drop-shadow(0 1px 0 #0004); }
 body.legacy-mode .xp-tray {
   display: flex;
   align-items: center;
