@@ -1249,7 +1249,6 @@ function lockAdmin() {
 
 function updateAdminUi() {
   adminToggle.setAttribute('aria-pressed', String(adminState.unlocked));
-  adminToggle.querySelector('b').textContent = adminState.unlocked ? 'Unlocked' : 'Locked';
   // The menu badge only exists while admin is unlocked.
   adminToggle.classList.toggle('hidden', !adminState.unlocked);
   adminToolsButton.classList.toggle('hidden', !adminState.unlocked);

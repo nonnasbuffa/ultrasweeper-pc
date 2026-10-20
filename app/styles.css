@@ -963,9 +963,20 @@ body.legacy-mode .music-toggle[aria-pressed="false"] .admin-toggle-icon { color:
 .stats-button { color: #f0c46a; }
 body.legacy-mode .stats-button { color: #a06a00; }
 
-/* Menu bar: logo and Admin badge on the left, icon buttons and switches on the right. */
+/* Menu bar: logo on the left; Admin badge, icon buttons and switches on the right. */
 .menu-header-start { display: flex; align-items: center; gap: 14px; min-width: 0; }
-body.legacy-mode .menu-header { justify-content: space-between; }
+.admin-toggle { padding: 5px 11px 5px 9px; color: #f3cf86; background: #2a2416; }
+.admin-toggle .admin-toggle-icon { color: #e0a63a; }
+body.legacy-mode .admin-toggle { color: #000; }
+/* Legacy keeps the Admin badge at the far left of its toolbar. */
+body.legacy-mode .menu-header-start { display: none; }
+body.legacy-mode .menu-header-actions { flex: 1; }
+body.legacy-mode .menu-header-actions .admin-toggle { margin-right: auto; }
+/* Phones (modern): shorter labels so all the buttons fit on one row under the logo. */
+@media (max-width: 520px) {
+  body:not(.legacy-mode) .menu-header-actions { justify-content: flex-start; flex-wrap: nowrap; }
+  body:not(.legacy-mode) .menu-header-actions .long-label { display: none; }
+}
 .icon-toggle { padding: 6px 10px; }
 .icon-toggle .admin-toggle-icon { width: 16px; height: 16px; }
 body.legacy-mode .icon-toggle { padding: 3px 9px; }
