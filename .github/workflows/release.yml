@@ -1,0 +1,47 @@
+name: Build UltraSweeper exe
+
+# Pushing a version tag (for example v1.0.1) builds UltraSweeper.exe and publishes it as a Release.
+# It can also be run by hand from the Actions tab; then the exe is only kept as a downloadable artifact.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install build tools
+        run: npm ci
+
+      - name: Build UltraSweeper.exe
+        run: npm run build
+
+      - name: Keep the exe as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UltraSweeper-exe
+          path: dist/UltraSweeper.exe
+
+      - name: Publish the Release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/UltraSweeper.exe \
+            --title "UltraSweeper ${GITHUB_REF_NAME#v}" \
+            --notes "Download **UltraSweeper.exe** below and double-click it to play. No install needed.
+
+          If Windows shows \"Windows protected your PC\", click **More info** → **Run anyway** (the exe isn't code-signed)."

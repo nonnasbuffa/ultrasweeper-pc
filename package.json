@@ -1,0 +1,33 @@
+{
+  "name": "ultrasweeper-pc-build",
+  "private": true,
+  "description": "Packs the desktop game into a single UltraSweeper.exe.",
+  "scripts": {
+    "sync": "node scripts/sync-app.js",
+    "build": "electron-builder --win portable --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron-builder": "24.13.3"
+  },
+  "build": {
+    "appId": "com.offlineminesweeper.app",
+    "productName": "UltraSweeper",
+    "copyright": "UltraSweeper",
+    "electronVersion": "28.1.2",
+    "directories": {
+      "app": "app",
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "asar": true,
+    "npmRebuild": false,
+    "win": {
+      "target": "portable",
+      "icon": "build/icon.png",
+      "signAndEditExecutable": true
+    },
+    "portable": {
+      "artifactName": "UltraSweeper.exe"
+    }
+  }
+}

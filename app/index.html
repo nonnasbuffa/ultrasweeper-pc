@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#0b0e15" />
+    <title>UltraSweeper</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="is-loading">
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="12" cy="15.6" r="1.6" fill="currentColor" /></symbol>
+      <symbol id="icon-unlock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M8 10.5V7.5a4 4 0 0 1 7.6-1.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="12" cy="15.6" r="1.6" fill="currentColor" /></symbol>
+      <symbol id="icon-hammer" viewBox="0 0 24 24"><path d="M9.2 4.6 12 1.8l6.4 6.4-2.8 2.8z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><path d="M12.6 8.6 3.9 17.3a1.7 1.7 0 0 0 2.4 2.4l8.7-8.7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /><path d="M14 21.2h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
+      <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 2.8 19.5 6v5.6c0 4.6-3.2 8.2-7.5 9.6-4.3-1.4-7.5-5-7.5-9.6V6z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" /><path d="M12 8.2v4.4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /><circle cx="12" cy="15.8" r="1.3" fill="currentColor" /></symbol>
+      <symbol id="icon-trophy" viewBox="0 0 24 24"><path d="M7 3.5h10v5.2a5 5 0 0 1-10 0z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" /><path d="M7 5.5H3.8v1.2A3.3 3.3 0 0 0 7.1 10M17 5.5h3.2v1.2a3.3 3.3 0 0 1-3.3 3.3M12 13.7v3.6M8 20.5h8M9.5 17.3h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      <symbol id="icon-music" viewBox="0 0 24 24"><path d="M9 17.5V5.2l11-2.2v12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /><circle cx="6.4" cy="17.8" r="2.7" fill="currentColor" /><circle cx="17.4" cy="15.6" r="2.7" fill="currentColor" /></symbol>
+      <symbol id="icon-music-off" viewBox="0 0 24 24"><path d="M9 17.5V5.2l11-2.2v12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".45" /><circle cx="6.4" cy="17.8" r="2.7" fill="currentColor" opacity=".45" /><circle cx="17.4" cy="15.6" r="2.7" fill="currentColor" opacity=".45" /><path d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
+      <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.4-1.2-1.6-1.2-2.8 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><circle cx="7.5" cy="11" r="1.4" fill="currentColor" /><circle cx="10" cy="7" r="1.4" fill="currentColor" /><circle cx="15" cy="7" r="1.4" fill="currentColor" /></symbol>
+    </svg>
+
+    <div id="loading-screen" class="loading-screen" role="status" aria-live="polite">
+      <div class="loading-content">
+        <div class="loading-grid" aria-hidden="true">
+          <span></span><span></span><span></span>
+          <span></span><span class="loading-mine"><img src="assets/mine.svg" alt="" /></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <p class="loading-title">UltraSweeper</p>
+        <div class="xp-boot-logo" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>UltraSweeper<sup>Classic</sup></span></div>
+        <div class="loading-bar"><i id="loading-progress"></i></div>
+        <p id="loading-text" class="loading-text">Loading assets…</p>
+      </div>
+    </div>
+
+    <main class="app-shell">
+      <section id="mode-screen" class="screen mode-screen" aria-labelledby="mode-title">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>UltraSweeper</span></div>
+        <header class="menu-header">
+          <div class="menu-header-start">
+            <span class="brand"><i></i>UltraSweeper</span>
+            <button id="admin-toggle" class="legacy-toggle admin-toggle hidden" type="button" aria-pressed="false">
+              <svg class="admin-toggle-icon"><use href="#icon-shield" /></svg><span>Admin</span><b>Locked</b>
+            </button>
+          </div>
+          <div class="menu-header-actions">
+            <button id="menu-stats" class="legacy-toggle stats-toggle icon-toggle" type="button" aria-label="Stats" title="Stats"><svg class="admin-toggle-icon"><use href="#icon-trophy" /></svg></button>
+            <button id="music-toggle" class="legacy-toggle music-toggle" type="button" aria-pressed="true">
+              <svg class="admin-toggle-icon"><use href="#icon-music" /></svg><span>Music</span><b>On</b>
+            </button>
+            <button id="legacy-toggle" class="legacy-toggle" type="button" aria-pressed="false">
+              <span>Legacy mode</span><b>Off</b>
+            </button>
+            <span class="offline-badge">Offline · Customizable</span>
+          </div>
+        </header>
+        <div class="menu-hero">
+          <div class="menu-copy">
+            <p class="eyebrow">Ready when you are</p>
+            <h1 id="mode-title">Find the safe<br />path.</h1>
+            <p class="intro">A familiar game, rebuilt around your own rules and visual style.</p>
+          </div>
+          <div class="board-art" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+        <div class="mode-actions" aria-label="Choose game type">
+          <button id="normal-game" class="mode-card normal-card" type="button">
+            <span class="card-number">01</span>
+            <span class="mode-card-title">Normal Minesweeper</span>
+            <small>Classic beginner</small>
+            <span class="mode-details">9 × 9 <b>·</b> 10 mines <i><svg><use href="#icon-arrow-right" /></svg></i></span>
+          </button>
+          <button id="custom-game" class="mode-card custom-card" type="button">
+            <span class="card-number">02</span>
+            <span class="mode-card-title">Custom Game</span>
+            <small>Build your own board</small>
+            <span class="mode-details">Size, mines, rules <i><svg><use href="#icon-arrow-right" /></svg></i></span>
+          </button>
+        </div>
+        <div class="xp-statusbar" aria-hidden="true"><span>Choose a game to begin</span><span>Offline · Customizable</span></div>
+      </section>
+
+      <section id="game-screen" class="screen game-screen hidden">
+        <div class="xp-titlebar"><img src="assets/mine.svg" alt="" /><span>UltraSweeper</span><button id="xp-close-game" class="xp-close" type="button" aria-label="Back to games"><svg><use href="#icon-close" /></svg></button></div>
+        <header class="game-header">
+          <button id="back-to-menu" class="text-button" type="button"><svg class="button-icon"><use href="#icon-arrow-left" /></svg>Games</button>
+          <div class="game-actions">
+            <button id="open-admin" class="text-button admin-tools-button hidden" type="button" aria-haspopup="dialog" aria-expanded="false" title="Admin tools"><svg class="button-icon"><use href="#icon-hammer" /></svg>Admin</button>
+            <button id="game-music" class="text-button icon-button music-button" type="button" aria-pressed="true" aria-label="Music" title="Music on"><svg class="button-icon"><use href="#icon-music" /></svg></button>
+            <button id="open-stats" class="text-button icon-button stats-button" type="button" aria-label="Stats" title="Stats"><svg class="button-icon"><use href="#icon-trophy" /></svg></button>
+            <button id="open-settings" class="text-button" type="button"><svg class="button-icon"><use href="#icon-palette" /></svg>Appearance</button>
+          </div>
+        </header>
+        <div id="arena" class="arena">
+          <button id="arena-lock" class="arena-lock" type="button" aria-pressed="true" aria-label="Unlock to move and resize the game" title="Unlock to move and resize"><svg><use href="#icon-lock" /></svg></button>
+        <div class="game-panel">
+          <div class="counter"><span class="counter-label">Mines</span><strong id="mine-counter">010</strong></div>
+          <button id="face-button" class="face-button" type="button" aria-label="Start a new game"><img alt="" /></button>
+          <div class="counter"><span class="counter-label">Time</span><strong id="timer">000</strong></div>
+        </div>
+        <p id="game-status" class="game-status" aria-live="polite">Click any tile to start.</p>
+        <div id="board-wrap" class="board-wrap">
+          <div id="board" class="board" role="grid" aria-label="UltraSweeper board"></div>
+        </div>
+        <p class="game-hint">Right-click or press F to flag · Click a number to clear its neighbors</p>
+        <span class="arena-grip" aria-hidden="true"></span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="xp-taskbar">
+      <span class="xp-task" aria-hidden="true"><img src="assets/face.svg" alt="" />UltraSweeper</span>
+      <span class="xp-tray"><time id="xp-clock"></time></span>
+    </footer>
+
+    <section id="custom-screen" class="dialog-screen hidden" aria-labelledby="custom-title" role="dialog" aria-modal="true">
+      <form id="custom-form" class="dialog-card" novalidate>
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Custom Game</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">New board</p>
+        <h2 id="custom-title">Custom game</h2>
+        <div class="form-grid">
+          <label>Width<input id="board-width" type="number" min="5" max="50" value="16" required /></label>
+          <label>Height<input id="board-height" type="number" min="5" max="50" value="16" required /></label>
+          <label class="wide">Mines<input id="mine-count" type="number" min="1" value="40" required /></label>
+        </div>
+        <p id="custom-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">Start custom game</button>
+      </form>
+    </section>
+
+    <section id="admin-screen" class="dialog-screen hidden" aria-labelledby="admin-title" role="dialog" aria-modal="true">
+      <form id="admin-form" class="dialog-card admin-login" novalidate>
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Admin Access</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Restricted</p>
+        <h2 id="admin-title"><svg class="admin-title-icon"><use href="#icon-shield" /></svg>Admin access</h2>
+        <p class="settings-intro">Enter the admin password to unlock the in-game tools.</p>
+        <div class="form-grid">
+          <label class="wide">Password<input id="admin-password" type="password" autocomplete="off" spellcheck="false" required /></label>
+        </div>
+        <p id="admin-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">Unlock</button>
+      </form>
+    </section>
+
+    <aside id="admin-panel" class="admin-panel hidden" role="dialog" aria-labelledby="admin-panel-title">
+      <div class="xp-titlebar admin-panel-titlebar"><svg><use href="#icon-hammer" /></svg><span>Admin Tools</span></div>
+      <header class="admin-panel-header">
+        <span class="admin-panel-badge"><svg><use href="#icon-hammer" /></svg></span>
+        <div><p class="eyebrow">Admin</p><h3 id="admin-panel-title">Cheats</h3></div>
+        <button id="close-admin" class="close-button" type="button" aria-label="Close admin tools"><svg><use href="#icon-close" /></svg></button>
+      </header>
+      <div class="admin-section">
+        <button class="admin-switch" type="button" data-cheat="xray" aria-pressed="false"><span><b>X-ray vision</b><small>See every hidden mine</small></span><i></i></button>
+        <button class="admin-switch" type="button" data-cheat="shield" aria-pressed="false"><span><b>Mine shield</b><small>Mines get flagged instead of exploding</small></span><i></i></button>
+        <button class="admin-switch" type="button" data-cheat="freeze" aria-pressed="false"><span><b>Freeze timer</b><small>Stop the clock while you think</small></span><i></i></button>
+      </div>
+      <div class="admin-actions">
+        <button class="admin-action" type="button" data-action="safe">Reveal a safe tile</button>
+        <button class="admin-action" type="button" data-action="flags">Flag all mines</button>
+        <button class="admin-action" type="button" data-action="time">Reset timer</button>
+        <button class="admin-action admin-action-win" type="button" data-action="win">Win instantly</button>
+      </div>
+      <p id="admin-note" class="admin-note" role="status"></p>
+      <button id="lock-admin" class="admin-lock-button" type="button">Lock admin<small>The password will be needed again</small></button>
+    </aside>
+
+    <section id="stats-screen" class="dialog-screen hidden" aria-labelledby="stats-title" role="dialog" aria-modal="true">
+      <div class="settings-card stats-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/face-win.svg" alt="" /><span>Leaderboard</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Local records</p>
+        <h2 id="stats-title"><svg class="admin-title-icon stats-title-icon"><use href="#icon-trophy" /></svg>Leaderboard</h2>
+        <p class="settings-intro">Your best times on this device, for each board size.</p>
+        <div id="stats-boards" class="stats-boards" role="tablist" aria-label="Board size"></div>
+        <div id="stats-summary" class="stats-summary"></div>
+        <ol id="stats-times" class="stats-times"></ol>
+        <p id="stats-empty" class="stats-empty hidden">No wins on this board yet. Clear one to set a time!</p>
+        <div class="stats-footer">
+          <button id="clear-stats" class="secondary-button" type="button">Clear this board's stats</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="settings-screen" class="dialog-screen hidden" aria-labelledby="settings-title" role="dialog" aria-modal="true">
+      <div class="settings-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/face.svg" alt="" /><span>Appearance</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Appearance</p>
+        <h2 id="settings-title">Your asset pack</h2>
+        <p class="settings-intro">Use a PNG for any item. Your choices are stored on this device.</p>
+        <section class="accent-picker" aria-labelledby="accent-title">
+          <div>
+            <span id="accent-title" class="accent-title">Interface color</span>
+            <span class="accent-hint">Choose the accent used across the modern UI.</span>
+          </div>
+          <div class="accent-actions">
+            <input id="accent-color" class="accent-wheel" type="color" value="#ffffff" aria-label="Choose interface color" />
+            <button id="reset-accent" class="reset-accent" type="button">Default</button>
+          </div>
+        </section>
+        <section class="song-picker" aria-labelledby="song-title">
+          <div class="song-heading">
+            <svg class="song-icon"><use href="#icon-music" /></svg>
+            <div>
+              <span id="song-title" class="accent-title">Song</span>
+              <span id="song-current" class="accent-hint">Built-in tune</span>
+            </div>
+          </div>
+          <div class="song-link-row">
+            <input id="song-link" class="song-link" type="url" inputmode="url" placeholder="Paste a YouTube link" autocomplete="off" spellcheck="false" />
+            <button id="song-link-use" class="upload-button" type="button">Use link</button>
+          </div>
+          <div class="song-buttons">
+            <input id="song-file" type="file" accept="audio/*,.mp3" hidden />
+            <button id="song-file-pick" class="upload-button" type="button">Choose MP3 file</button>
+          </div>
+          <p id="song-error" class="form-error song-error" role="alert"></p>
+        </section>
+        <div id="asset-list" class="asset-list"></div>
+        <p id="asset-error" class="form-error" role="alert"></p>
+        <div class="settings-footer">
+          <button id="restore-assets" class="secondary-button" type="button">Restore default assets</button>
+        </div>
+      </div>
+    </section>
+    <script src="music.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
