@@ -6,7 +6,9 @@ const dialogs = {
   custom: document.querySelector('#custom-screen'),
   settings: document.querySelector('#settings-screen'),
   admin: document.querySelector('#admin-screen'),
-  stats: document.querySelector('#stats-screen')
+  stats: document.querySelector('#stats-screen'),
+  duel: document.querySelector('#duel-screen'),
+  pass: document.querySelector('#pass-screen')
 };
 
 const boardElement = document.querySelector('#board');
@@ -50,6 +52,11 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const longPressDelay = 420;
 // How close (in pixels) the game window must get to the centre before it snaps there.
 const snapDistance = 12;
+const duelBar = document.querySelector('#duel-bar');
+const duelPrimary = document.querySelector('#duel-primary');
+const duelSecondary = document.querySelector('#duel-secondary');
+const gameHint = document.querySelector('.game-hint');
+const normalHint = gameHint.textContent;
 
 const assetDefinitions = [
   { id: 'face', name: 'Smiley face', hint: 'Default and in-progress face' },
@@ -111,6 +118,25 @@ window.setInterval(updateClock, 15000);
 document.querySelector('#normal-game').addEventListener('click', () => startGame(9, 9, 10));
 document.querySelector('#custom-game').addEventListener('click', () => openDialog('custom'));
 document.querySelector('#custom-form').addEventListener('submit', startCustomGame);
+document.querySelector('#duel-game').addEventListener('click', () => openDuelDialog());
+document.querySelector('#duel-form').addEventListener('submit', startDuelSetup);
+duelPrimary.addEventListener('click', () => {
+  if (game.duel === 'setup') finishDuelSetup();
+  else openDuelDialog();
+});
+duelSecondary.addEventListener('click', () => {
+  if (game.duel === 'setup') startGame(game.width, game.height, 0, 'setup');
+  else restartGame();
+});
+document.querySelector('#pass-start').addEventListener('click', closeDialog);
+document.querySelector('#pass-back').addEventListener('click', () => {
+  closeDialog();
+  game.duel = 'setup';
+  game.layout = null;
+  refreshGameAppearance();
+  showDuelStatus();
+  applyDuelUi();
+});
 document.querySelector('#back-to-menu').addEventListener('click', backToMenu);
 document.querySelector('#xp-close-game').addEventListener('click', backToMenu);
 arenaLock.addEventListener('click', () => {
@@ -598,12 +624,104 @@ function startCustomGame(event) {
 
 function restartGame() {
   if (!game) return;
-  startGame(game.width, game.height, game.mines);
+  if (game.duel === 'setup') {
+    startGame(game.width, game.height, 0, 'setup');
+  } else if (game.duel) {
+    // Player 2 tries the same board again.
+    const layout = game.layout;
+    startGame(game.width, game.height, layout.length, 'play');
+    hideDuelMines(layout);
+  } else {
+    startGame(game.width, game.height, game.mines);
+  }
 }
 
-function startGame(width, height, mines) {
+// 2 players: Player 1 picks a size and hides the mines by hand, then Player 2 plays that board.
+function openDuelDialog() {
+  if (game && game.duel) {
+    document.querySelector('#duel-width').value = game.width;
+    document.querySelector('#duel-height').value = game.height;
+  }
+  document.querySelector('#duel-error').textContent = '';
+  openDialog('duel');
+}
+
+function startDuelSetup(event) {
+  event.preventDefault();
+  const width = Number(document.querySelector('#duel-width').value);
+  const height = Number(document.querySelector('#duel-height').value);
+  const valid = [width, height].every(size => Number.isInteger(size) && size >= 5 && size <= 50);
+  if (!valid) {
+    document.querySelector('#duel-error').textContent = 'Width and height must be whole numbers between 5 and 50.';
+    return;
+  }
+  closeDialog();
+  startGame(width, height, 0, 'setup');
+}
+
+function toggleDuelMine(index) {
+  const tile = game.tiles[index];
+  tile.mine = !tile.mine;
+  game.mines += tile.mine ? 1 : -1;
+  paintTile(index, tileButtons[index], tile.mine ? 'anim-flag' : 'anim-unflag');
+  showDuelStatus();
+  updateHud();
+}
+
+function showDuelStatus() {
+  const count = game.mines;
+  statusElement.className = 'game-status';
+  statusElement.textContent = count ? `Player 1: ${count} mine${count === 1 ? '' : 's'} hidden. Tap Done when you're ready.` : 'Player 1: tap tiles to hide your mines.';
+}
+
+function finishDuelSetup() {
+  const total = game.width * game.height;
+  if (!game.mines || game.mines >= total) {
+    setStatus(game.mines ? 'Leave at least one tile without a mine.' : 'Hide at least one mine first.', 'lose');
+    return;
+  }
+  game.duel = 'play';
+  game.layout = game.tiles.map((tile, index) => (tile.mine ? index : -1)).filter(index => index >= 0);
+  hideDuelMines(game.layout);
+  document.querySelector('#pass-summary').textContent = `${game.mines} mine${game.mines === 1 ? '' : 's'} hidden on a ${game.width} × ${game.height} board. Player 1, no peeking!`;
+  openDialog('pass');
+}
+
+function hideDuelMines(layout) {
+  game.layout = layout;
+  layout.forEach(index => { game.tiles[index].mine = true; });
+  game.tiles.forEach((tile, index) => {
+    tile.adjacent = neighbors(index).filter(next => game.tiles[next].mine).length;
+  });
+  refreshGameAppearance();
+  setStatus('Player 2: clear the board without hitting a mine!');
+  applyDuelUi();
+}
+
+function applyDuelUi() {
+  const setup = Boolean(game && game.duel === 'setup');
+  const over = Boolean(game && game.duel && game.ended);
+  duelBar.classList.toggle('hidden', !setup && !over);
+  duelSecondary.textContent = setup ? 'Clear' : 'Try again';
+  duelPrimary.textContent = setup ? 'Done, pass it on' : 'New match';
+  arenaElement.classList.toggle('duel-setup', setup);
+  gameHint.textContent = setup ? 'Tap a tile to hide a mine there, tap it again to remove it' : normalHint;
+  // The bar changes the game's height, so refit it to the window.
+  if (currentScreen === 'game') keepArenaOnScreen(false);
+}
+
+function beginPlay() {
+  game.started = true;
+  if (adminState.xray) refreshGameAppearance();
+  startTimer();
+  game.startedAt = performance.now();
+  game.pausedMs = 0;
+}
+
+function startGame(width, height, mines, duel = null) {
   stopTimer();
   game = {
+    duel,
     width,
     height,
     mines,
@@ -617,9 +735,11 @@ function startGame(width, height, mines) {
   };
   statusElement.textContent = 'Click any tile to start.';
   statusElement.className = 'game-status';
+  if (duel === 'setup') showDuelStatus();
   showScreen('game');
   buildBoard();
   updateHud();
+  applyDuelUi();
   keepArenaOnScreen();
 }
 
@@ -656,6 +776,7 @@ function tileIndex(target) {
 }
 
 function tileState(tile) {
+  if (game.duel === 'setup') return tile.mine ? 'planted' : 'covered';
   if (!tile.revealed) {
     if (tile.wrongFlag) return 'wrong';
     if (tile.flagged) return 'flag';
@@ -680,7 +801,10 @@ function paintTile(index, button = tileButtons[index], animation = null, delay =
   if (!tile.revealed) {
     if (tile.flagged) button.append(icon('flag', ''));
     if (tile.wrongFlag) button.classList.add('wrong-flag');
-    if (!tile.flagged && adminState.xray && tile.mine) {
+    if (state === 'planted') {
+      button.classList.add('planted');
+      button.append(icon('mine', ''));
+    } else if (!tile.flagged && adminState.xray && tile.mine) {
       const ghost = icon('mine', '');
       ghost.className = 'xray-mine';
       button.append(ghost);
@@ -706,15 +830,16 @@ function paintTile(index, button = tileButtons[index], animation = null, delay =
 
 function reveal(index) {
   const tile = game.tiles[index];
+  if (game.duel === 'setup') {
+    toggleDuelMine(index);
+    return;
+  }
   if (game.ended || tile.revealed || tile.flagged) return;
   if (!game.started) {
-    plantMines(index);
-    game.started = true;
-    if (adminState.xray) refreshGameAppearance();
-    startTimer();
-    statusElement.textContent = 'Good luck!';
-    game.startedAt = performance.now();
-    game.pausedMs = 0;
+    // In 2 players the mines are already hidden, so the first tap isn't made safe.
+    if (!game.duel) plantMines(index);
+    beginPlay();
+    if (!game.duel) statusElement.textContent = 'Good luck!';
   }
   if (tile.mine) {
     if (adminState.shield) shieldMine(index);
@@ -795,7 +920,8 @@ function loseGame(explodedIndex) {
   exploded.exploded = true;
   game.ended = true;
   stopTimer();
-  recordResult(false);
+  // 2 player boards are hand-made, so they stay off the leaderboard.
+  if (!game.duel) recordResult(false);
   const ex = explodedIndex % game.width;
   const ey = Math.floor(explodedIndex / game.width);
   game.tiles.forEach((tile, index) => {
@@ -810,8 +936,9 @@ function loseGame(explodedIndex) {
   paintTile(explodedIndex, tileButtons[explodedIndex], 'anim-mine', 0);
   if (motionEnabled()) boardElement.classList.add('shake');
   boardElement.classList.add('lost');
-  setStatus('Game over. Try again?', 'lose');
+  setStatus(game.duel ? "Boom! Player 1's trap worked." : 'Game over. Try again?', 'lose');
   updateHud();
+  applyDuelUi();
 }
 
 function checkWin() {
@@ -828,6 +955,11 @@ function checkWin() {
   });
   boardElement.classList.add('won');
   const time = elapsedSeconds();
+  if (game.duel) {
+    setStatus(`Player 2 cleared the board in ${formatTime(time)}!`, 'win');
+    applyDuelUi();
+    return;
+  }
   const record = recordResult(true, time);
   let message = `You cleared the board in ${formatTime(time)}!`;
   if (record.rank === 0) message = `New best time: ${formatTime(time)}!`;
@@ -836,6 +968,10 @@ function checkWin() {
 }
 
 function toggleFlag(index) {
+  if (game.duel === 'setup') {
+    toggleDuelMine(index);
+    return;
+  }
   const tile = game.tiles[index];
   if (game.ended || tile.revealed) return;
   tile.flagged = !tile.flagged;
@@ -967,6 +1103,7 @@ function icon(id, alt) {
 }
 
 function tileLabel(tile) {
+  if (game.duel === 'setup') return tile.mine ? 'Hidden mine' : 'Empty tile';
   if (tile.wrongFlag) return 'Wrongly flagged tile';
   if (tile.flagged) return 'Flagged tile';
   if (!tile.revealed) return 'Covered tile';
@@ -1382,6 +1519,11 @@ function shieldMine(index) {
 function startWithAdmin() {
   // Cheats that need mines start the game from the center tile.
   if (game.started) return true;
+  if (game.duel) {
+    // Hand-placed mines could sit in the center, so just start the clock.
+    beginPlay();
+    return true;
+  }
   const center = Math.floor(game.height / 2) * game.width + Math.floor(game.width / 2);
   reveal(center);
   return game.started;
@@ -1390,6 +1532,10 @@ function startWithAdmin() {
 function runAdminAction(action) {
   if (!game || currentScreen !== 'game') {
     adminNote.textContent = 'Start a game first.';
+    return;
+  }
+  if (game.duel === 'setup') {
+    adminNote.textContent = 'Finish hiding the mines first.';
     return;
   }
   if (game.ended && action !== 'time') {
@@ -1401,11 +1547,12 @@ function runAdminAction(action) {
     updateHud();
     adminNote.textContent = 'Timer reset.';
   } else if (action === 'safe') {
-    if (!game.started) {
+    if (!game.started && !game.duel) {
       startWithAdmin();
       adminNote.textContent = 'Opened the center of the board.';
       return;
     }
+    startWithAdmin();
     const safe = game.tiles.map((tile, index) => index).filter(index => !game.tiles[index].mine && !game.tiles[index].revealed && !game.tiles[index].flagged);
     if (!safe.length) {
       adminNote.textContent = 'No hidden safe tiles left.';

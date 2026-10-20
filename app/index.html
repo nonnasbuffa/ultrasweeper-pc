@@ -20,6 +20,7 @@
       <symbol id="icon-trophy" viewBox="0 0 24 24"><path d="M7 3.5h10v5.2a5 5 0 0 1-10 0z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" /><path d="M7 5.5H3.8v1.2A3.3 3.3 0 0 0 7.1 10M17 5.5h3.2v1.2a3.3 3.3 0 0 1-3.3 3.3M12 13.7v3.6M8 20.5h8M9.5 17.3h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></symbol>
       <symbol id="icon-music" viewBox="0 0 24 24"><path d="M9 17.5V5.2l11-2.2v12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /><circle cx="6.4" cy="17.8" r="2.7" fill="currentColor" /><circle cx="17.4" cy="15.6" r="2.7" fill="currentColor" /></symbol>
       <symbol id="icon-music-off" viewBox="0 0 24 24"><path d="M9 17.5V5.2l11-2.2v12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".45" /><circle cx="6.4" cy="17.8" r="2.7" fill="currentColor" opacity=".45" /><circle cx="17.4" cy="15.6" r="2.7" fill="currentColor" opacity=".45" /><path d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
+      <symbol id="icon-players" viewBox="0 0 24 24"><circle cx="8.5" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M2.5 20c.4-3.6 2.8-5.6 6-5.6s5.6 2 6 5.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="16.8" cy="7.4" r="2.8" fill="none" stroke="currentColor" stroke-width="2" /><path d="M16.4 13.3c2.9-.3 4.8 1.6 5.2 4.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
       <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.4-1.2-1.6-1.2-2.8 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><circle cx="7.5" cy="11" r="1.4" fill="currentColor" /><circle cx="10" cy="7" r="1.4" fill="currentColor" /><circle cx="15" cy="7" r="1.4" fill="currentColor" /></symbol>
     </svg>
 
@@ -85,6 +86,12 @@
             <small>Build your own board</small>
             <span class="mode-details">Size, mines, rules <i><svg><use href="#icon-arrow-right" /></svg></i></span>
           </button>
+          <button id="duel-game" class="mode-card duel-card" type="button">
+            <span class="card-number">03</span>
+            <span class="mode-card-title">2 Players</span>
+            <small>Hide mines for a friend</small>
+            <span class="mode-details">Place <b>·</b> pass <b>·</b> play <i><svg><use href="#icon-arrow-right" /></svg></i></span>
+          </button>
         </div>
         <div class="xp-statusbar" aria-hidden="true"><span>Choose a game to begin</span><span>Offline · Customizable</span></div>
       </section>
@@ -108,6 +115,10 @@
           <div class="counter"><span class="counter-label">Time</span><strong id="timer">000</strong></div>
         </div>
         <p id="game-status" class="game-status" aria-live="polite">Click any tile to start.</p>
+        <div id="duel-bar" class="duel-bar hidden">
+          <button id="duel-secondary" class="secondary-button" type="button">Clear</button>
+          <button id="duel-primary" class="primary-button" type="button">Done, pass it on</button>
+        </div>
         <div id="board-wrap" class="board-wrap">
           <div id="board" class="board" role="grid" aria-label="UltraSweeper board"></div>
         </div>
@@ -166,6 +177,36 @@
         <p id="custom-error" class="form-error" role="alert"></p>
         <button class="primary-button" type="submit">Start custom game</button>
       </form>
+    </section>
+
+    <section id="duel-screen" class="dialog-screen hidden" aria-labelledby="duel-title" role="dialog" aria-modal="true">
+      <form id="duel-form" class="dialog-card" novalidate>
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>2 Players</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Player 1</p>
+        <h2 id="duel-title">2 player match</h2>
+        <p class="settings-intro">Pick the board size, then tap tiles to hide the mines. When you're done, pass the device: Player 2 has to clear your board.</p>
+        <div class="form-grid">
+          <label>Width<input id="duel-width" type="number" min="5" max="50" value="9" required /></label>
+          <label>Height<input id="duel-height" type="number" min="5" max="50" value="9" required /></label>
+        </div>
+        <p id="duel-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">Place the mines</button>
+      </form>
+    </section>
+
+    <section id="pass-screen" class="dialog-screen pass-screen hidden" aria-labelledby="pass-title" role="dialog" aria-modal="true">
+      <div class="dialog-card pass-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Pass the device</span></div>
+        <p class="eyebrow">Mines hidden</p>
+        <svg class="pass-icon" aria-hidden="true"><use href="#icon-players" /></svg>
+        <h2 id="pass-title">Pass it to Player 2</h2>
+        <p id="pass-summary" class="settings-intro"></p>
+        <div class="pass-actions">
+          <button id="pass-back" class="secondary-button" type="button">Edit mines</button>
+          <button id="pass-start" class="primary-button" type="button">I'm Player 2, start</button>
+        </div>
+      </div>
     </section>
 
     <section id="admin-screen" class="dialog-screen hidden" aria-labelledby="admin-title" role="dialog" aria-modal="true">

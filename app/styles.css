@@ -41,7 +41,7 @@ h2 { font-size: 1.8rem; letter-spacing: -.04em; }
 .board-art { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; width: 190px; aspect-ratio: 1; transform: rotate(8deg); }
 .board-art span { border: 1px solid #84a4c266; border-radius: 7px; background: linear-gradient(140deg, #4f7599, #223b59); box-shadow: inset 0 1px #caeeff47, 0 8px 18px #0003; }
 .board-art span:nth-child(3n) { background: linear-gradient(140deg, #af89e8, #66458b); }.board-art span:nth-child(5n) { background: #162334; }.board-art span:nth-child(7n) { background: linear-gradient(140deg, #6fe0d1, #277f88); }
-.mode-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; text-align: left; }
+.mode-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; text-align: left; }
 .mode-card, .dialog-card, .settings-card, .game-panel, .board-wrap { border: 1px solid #2c3544; border-radius: 18px; background: #1a202a; box-shadow: 0 18px 45px #0004; }
 .mode-card { position: relative; min-height: 178px; padding: 20px; overflow: hidden; color: inherit; text-align: left; transition: transform .35s var(--ease-out), border-color .25s ease, background .25s ease, box-shadow .35s var(--ease-out); }
 .mode-card:hover { box-shadow: 0 24px 50px #0006; }.mode-card:active { transform: translateY(-1px) scale(.99) !important; }
@@ -148,6 +148,7 @@ body.is-loading .app-shell { visibility: hidden; }
 .mode-screen.screen-enter .board-art span { animation: tile-in .5s var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 30ms + .1s); }
 .mode-screen.screen-enter .mode-card { animation: rise-in .6s var(--ease-out) both; animation-delay: .18s; }
 .mode-screen.screen-enter .custom-card { animation-delay: .26s; }
+.mode-screen.screen-enter .duel-card { animation-delay: .34s; }
 .game-screen.screen-enter .game-header, .game-screen.screen-enter .game-panel { animation: rise-in .5s var(--ease-out) both; }
 .game-screen.screen-enter .game-panel { animation-delay: .05s; }
 .board-art span:nth-child(4n+2) { --i: 1; }.board-art span:nth-child(4n+3) { --i: 2; }.board-art span:nth-child(4n+4) { --i: 3; }
@@ -1194,4 +1195,56 @@ body.legacy-mode .mode-screen .board-art span.art-press { animation: art-pulse-l
   .board-art span { border-radius: 5px; }
   body.legacy-mode .menu-hero .board-art { width: 84px; }
   body.legacy-mode .board-art span { border-width: 2px; }
+}
+
+/* ==========================================================================
+   2 players
+   ========================================================================== */
+.duel-card::after { background: #ffb86b1c; }
+.duel-card .card-number, .duel-card .mode-details i { color: #ffb86b; }
+.duel-bar { display: flex; justify-content: center; gap: 10px; margin: -2px 0 13px; }
+.duel-bar .primary-button { width: auto; }
+.duel-bar button { padding: 10px 16px; }
+.tile.planted { background: #7a3440; box-shadow: 0 0 0 2px #ff8a8a inset; }
+.duel-setup .tile:not(.planted):hover { filter: brightness(1.3); }
+.pass-card { text-align: center; }
+.pass-icon { display: block; width: 58px; height: 58px; margin: 6px auto 4px; color: var(--accent); }
+.pass-actions { display: flex; gap: 10px; margin-top: 22px; }
+.pass-actions button { flex: 1; }
+.pass-screen { backdrop-filter: blur(14px); }
+
+body.legacy-mode .duel-card::before { background-image: url("assets/mine.svg"); }
+body.legacy-mode .game-screen { grid-template-areas: "title title" "menu menu" "panel panel" "board board" "status hint" "duel duel"; }
+body.legacy-mode .duel-bar { grid-area: duel; justify-content: flex-end; gap: 6px; margin: 0; padding: 6px 4px 3px; border-top: 1px solid #b6b29f; background: var(--xp-face); }
+body.legacy-mode .duel-bar button { padding: 3px 12px; min-width: 90px; }
+body.legacy-mode .tile.planted { background: #ffb3b3; box-shadow: none; border-color: #fff #a05050 #a05050 #fff; }
+body.legacy-mode .pass-icon { width: 44px; height: 44px; margin-top: 14px; color: #1a3d9c; }
+body.legacy-mode .pass-actions { justify-content: flex-end; gap: 6px; margin-top: 8px; }
+body.legacy-mode .pass-actions button { flex: 0 0 auto; }
+body.legacy-mode .dialog-card .pass-actions .primary-button { margin: 0; }
+body.legacy-mode .pass-screen { backdrop-filter: blur(10px); }
+@media (max-width: 600px) {
+  body.legacy-mode .game-screen { grid-template-areas: "title" "menu" "panel" "board" "status" "duel"; }
+}
+/* Phones: three game cards have to fit with nothing to scroll, so they drop the 01/02/03 numbers and get tighter. */
+@media (max-width: 600px) {
+  body:not(.legacy-mode) .mode-card { min-height: clamp(88px, 11.5dvh, 150px); padding: clamp(12px, 1.8dvh, 18px) 20px; }
+  body:not(.legacy-mode) .mode-card .card-number { display: none; }
+  body:not(.legacy-mode) .mode-card-title { margin-top: 0; }
+  body:not(.legacy-mode) .mode-details { padding-top: 6px; }
+  body.legacy-mode .mode-actions { gap: 8px; padding: 12px; }
+  body.legacy-mode .mode-card { padding: 10px 12px; }
+  body.legacy-mode .mode-details { margin-top: 4px; }
+}
+@media (max-width: 600px) and (max-height: 760px) {
+  body.legacy-mode .menu-hero { padding: 16px 20px 18px; }
+  body.legacy-mode .menu-hero .eyebrow { display: none; }
+  body.legacy-mode .menu-hero h1 { font-size: clamp(1.9rem, 5.4dvh, 2.4rem); }
+}
+body.legacy-mode .pass-icon { margin: 14px auto 0; }
+body.legacy-mode .pass-actions { justify-content: center; }
+@media (max-width: 600px) and (max-height: 760px) {
+  body:not(.legacy-mode) .mode-card { min-height: 0; padding-block: 10px; }
+  body:not(.legacy-mode) .mode-card small { display: none; }
+  body:not(.legacy-mode) .menu-hero { padding-block: 6px 10px; }
 }
