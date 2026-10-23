@@ -8,7 +8,8 @@ const dialogs = {
   admin: document.querySelector('#admin-screen'),
   stats: document.querySelector('#stats-screen'),
   duel: document.querySelector('#duel-screen'),
-  pass: document.querySelector('#pass-screen')
+  pass: document.querySelector('#pass-screen'),
+  tutorial: document.querySelector('#tutorial-screen')
 };
 
 const boardElement = document.querySelector('#board');
@@ -57,6 +58,24 @@ const duelPrimary = document.querySelector('#duel-primary');
 const duelSecondary = document.querySelector('#duel-secondary');
 const gameHint = document.querySelector('.game-hint');
 const normalHint = gameHint.textContent;
+const tutorialStorageKey = 'offline-minesweeper-tutorial-v1';
+// Tutorial pictures: one 5 × 5 board shown at different moments. o = open, c = closed, f = flagged.
+const tutorialMines = [3, 10, 17, 18];
+const tutorialSteps = [
+  { title: 'The goal', board: 'ooofo ooooo foooo ooffo ooooo',
+    text: () => "Open every tile that isn't hiding a mine. Open them all and you win, but open a mine and it's game over." },
+  { title: 'Open a tile', board: 'oooccoooccccccccccccccccc', mark: [0],
+    text: tap => `${tap} a tile to open it. Your first one is always safe. Tiles with no mines around them open their neighbors for you, so one ${tap.toLowerCase()} can clear a whole area.` },
+  { title: 'Read the numbers', board: 'oooco ooooo ccccc ccccc ccccc', mark: [2], target: [3],
+    text: () => 'A number tells you how many mines touch that tile, diagonals included. The highlighted 1 has only one closed tile next to it, so that tile must be a mine.' },
+  { title: 'Flag the mines', board: 'ooofo ooooo ccccc ccccc ccccc', mark: [3],
+    text: (tap, touch) => `${touch ? 'Hold a tile to put a flag on it (your phone buzzes), and hold it again to take the flag off.' : 'Right-click a tile (or press F) to put a flag on it, and do it again to take the flag off.'} Flags mark mines, so you can't open them by accident.` },
+  { title: 'Clear around a number', board: 'ooofo ooooo fcccc ccccc ccccc', mark: [5], target: [11],
+    text: tap => `When a number already has all its mines flagged, ${tap.toLowerCase()} it to open all its other neighbors at once. This 1 has its flag, so the closed tile next to it is safe.` },
+  { title: "You're ready!", board: 'ooofo ooooo foooo ooffo ooooo',
+    text: () => 'In a game, the left counter shows how many mines are left to flag, the right one is your time, and the face starts a new game. Good luck!' }
+];
+let tutorialStep = 0;
 
 const assetDefinitions = [
   { id: 'face', name: 'Smiley face', hint: 'Default and in-progress face' },
@@ -162,6 +181,21 @@ window.addEventListener('resize', () => {
 faceButton.addEventListener('click', restartGame);
 document.querySelector('#open-settings').addEventListener('click', openAppearance);
 document.querySelector('#menu-appearance').addEventListener('click', openAppearance);
+document.querySelector('#menu-help').addEventListener('click', () => openTutorial(false));
+document.querySelector('#tutorial-yes').addEventListener('click', closeDialog);
+document.querySelector('#tutorial-no').addEventListener('click', () => {
+  showTutorialStep(0);
+  document.querySelector('#tutorial-next').focus();
+});
+document.querySelector('#tutorial-back').addEventListener('click', () => showTutorialStep(tutorialStep - 1));
+document.querySelector('#tutorial-next').addEventListener('click', () => {
+  if (tutorialStep < tutorialSteps.length - 1) {
+    showTutorialStep(tutorialStep + 1);
+    return;
+  }
+  closeDialog();
+  startGame(9, 9, 10);
+});
 document.querySelector('#restore-assets').addEventListener('click', () => {
   assets = {};
   saveAssets();
@@ -331,11 +365,60 @@ function runLoadingScreen() {
     const wait = Math.max(0, minimumTime - (performance.now() - startedAt));
     window.setTimeout(() => {
       loadingScreen.classList.add('done');
+      // First launch: ask whether the player already knows the game.
+      if (storageGet(tutorialStorageKey) !== 'seen') window.setTimeout(() => {
+        if (!openDialogName && currentScreen === 'mode') openTutorial(true);
+      }, 500);
       document.body.classList.remove('is-loading');
       screens.mode.classList.add('screen-enter');
       window.setTimeout(() => loadingScreen.remove(), 700);
     }, wait);
   });
+}
+
+function openTutorial(welcome) {
+  storageSet(tutorialStorageKey, 'seen');
+  document.querySelector('#tutorial-welcome').classList.toggle('hidden', !welcome);
+  document.querySelector('#tutorial-steps').classList.toggle('hidden', welcome);
+  if (!welcome) showTutorialStep(0);
+  openDialog('tutorial');
+  if (!welcome) window.setTimeout(() => document.querySelector('#tutorial-next').focus(), 60);
+}
+
+function showTutorialStep(index) {
+  tutorialStep = Math.max(0, Math.min(tutorialSteps.length - 1, index));
+  const step = tutorialSteps[tutorialStep];
+  const touch = document.documentElement.classList.contains('touch-device');
+  const last = tutorialStep === tutorialSteps.length - 1;
+  document.querySelector('#tutorial-welcome').classList.add('hidden');
+  document.querySelector('#tutorial-steps').classList.remove('hidden');
+  document.querySelector('#tutorial-count').textContent = `Step ${tutorialStep + 1} of ${tutorialSteps.length}`;
+  document.querySelector('#tutorial-step-title').textContent = step.title;
+  document.querySelector('#tutorial-text').textContent = step.text(touch ? 'Tap' : 'Click', touch);
+  document.querySelector('#tutorial-back').classList.toggle('invisible', tutorialStep === 0);
+  document.querySelector('#tutorial-next').textContent = last ? 'Play a practice game' : 'Next';
+  document.querySelector('#tutorial-dots').replaceChildren(...tutorialSteps.map((_, dot) => {
+    const span = document.createElement('span');
+    span.classList.toggle('active', dot === tutorialStep);
+    return span;
+  }));
+  const near = index => tutorialMines.filter(mine => mine !== index && Math.abs((mine % 5) - (index % 5)) <= 1 && Math.abs(Math.floor(mine / 5) - Math.floor(index / 5)) <= 1).length;
+  document.querySelector('#tutorial-board').replaceChildren(...[...step.board.replace(/ /g, '')].map((state, index) => {
+    const tile = document.createElement('span');
+    tile.className = 'tile';
+    if (state === 'f') tile.append(icon('flag', ''));
+    if (state === 'o') {
+      const count = near(index);
+      tile.classList.add('revealed');
+      if (count) {
+        tile.classList.add(`n${count}`);
+        tile.textContent = count;
+      }
+    }
+    if (step.mark && step.mark.includes(index)) tile.classList.add('tutorial-mark');
+    if (step.target && step.target.includes(index)) tile.classList.add('tutorial-target');
+    return tile;
+  }));
 }
 
 function backToMenu() {

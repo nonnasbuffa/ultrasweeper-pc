@@ -1248,3 +1248,35 @@ body.legacy-mode .pass-actions { justify-content: center; }
   body:not(.legacy-mode) .mode-card small { display: none; }
   body:not(.legacy-mode) .menu-hero { padding-block: 6px 10px; }
 }
+
+/* ==========================================================================
+   First-launch question and tutorial
+   ========================================================================== */
+.invisible { visibility: hidden; }
+.tutorial-card { text-align: center; }
+.tutorial-hero { display: block; width: 64px; height: 64px; margin: 8px auto 6px; }
+.tutorial-actions { display: flex; gap: 10px; margin-top: 22px; }
+.tutorial-actions button { flex: 1; }
+.tutorial-board { --tile: 38px; display: grid; grid-template-columns: repeat(5, var(--tile)); gap: 2px; width: max-content; margin: 16px auto 4px; padding: 2px; border-radius: 6px; background: #273346; }
+.tutorial-board .tile { width: var(--tile); height: var(--tile); cursor: default; }
+.tutorial-board .tile:hover, .tutorial-board .tile:active { filter: none; transform: none; }
+.tutorial-mark { position: relative; z-index: 1; box-shadow: 0 0 0 3px var(--accent), 0 0 16px var(--accent); animation: tutorial-pulse 1.3s ease-in-out infinite; }
+.tutorial-target { position: relative; z-index: 1; outline: 3px dashed #ff8a8a; outline-offset: -3px; }
+@keyframes tutorial-pulse { 50% { box-shadow: 0 0 0 5px var(--accent), 0 0 24px var(--accent); } }
+.tutorial-text { min-height: 4.7em; margin-top: 12px; }
+.tutorial-dots { display: flex; justify-content: center; gap: 7px; margin-top: 6px; }
+.tutorial-dots span { width: 7px; height: 7px; border-radius: 50%; background: #3a4558; transition: background .2s ease, transform .2s ease; }
+.tutorial-dots span.active { background: var(--accent); transform: scale(1.3); }
+
+body.legacy-mode .tutorial-hero { width: 48px; height: 48px; margin-top: 14px; }
+body.legacy-mode .tutorial-board { --tile: 30px; gap: 0; padding: 0; border: 3px solid; border-color: #808080 #fff #fff #808080; border-radius: 0; background: #c0c0c0; margin-top: 12px; }
+body.legacy-mode .tutorial-mark { box-shadow: none; outline: 3px solid #0a64e6; outline-offset: -1px; animation: tutorial-blink 1s steps(1) infinite; }
+body.legacy-mode .tutorial-target { outline-color: #d00000; }
+@keyframes tutorial-blink { 50% { outline-color: #ffd200; } }
+body.legacy-mode .tutorial-text { min-height: 4.2em; margin-top: 8px; }
+body.legacy-mode .tutorial-dots span { border-radius: 0; background: #b8b4a4; }
+body.legacy-mode .tutorial-dots span.active { background: #0a64e6; transform: none; }
+body.legacy-mode .tutorial-actions { justify-content: center; gap: 6px; margin-top: 10px; }
+body.legacy-mode .tutorial-actions button { flex: 0 0 auto; }
+body.legacy-mode .dialog-card .tutorial-actions .primary-button { margin: 0; }
+@media (prefers-reduced-motion: reduce) { .tutorial-mark { animation: none; } }
