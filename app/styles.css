@@ -37,7 +37,7 @@ h1, h2, p { margin-top: 0; }
 /* Sora is bundled with the game (assets/fonts, SIL Open Font License) so the headline looks the same on every device, offline. */
 @font-face { font-family: Sora; src: url('assets/fonts/sora-700.woff2') format('woff2'); font-weight: 700; font-display: block; }
 @font-face { font-family: Sora; src: url('assets/fonts/sora-600.woff2') format('woff2'); font-weight: 600; font-display: block; }
-h1 { margin-bottom: 14px; font-family: Sora, ui-sans-serif, system-ui, sans-serif; font-size: clamp(2.8rem, 7.4vw, 4.8rem); font-weight: 700; line-height: .98; letter-spacing: -.035em; }
+h1 { margin-bottom: 14px; font-family: Sora, ui-sans-serif, system-ui, sans-serif; font-size: clamp(2.4rem, 6vw, 3.9rem); font-weight: 700; line-height: .98; letter-spacing: -.035em; }
 h2 { font-family: Sora, ui-sans-serif, system-ui, sans-serif; font-size: 1.7rem; font-weight: 600; letter-spacing: -.03em; }
 .intro, .settings-intro { color: #aeb9c9; line-height: 1.55; }
 .menu-hero .intro { max-width: 390px; margin-bottom: 0; font-size: 1rem; }
@@ -1012,7 +1012,7 @@ body.legacy-mode .stats-button { color: #a06a00; }
 body.legacy-mode .admin-toggle { color: #000; }
 /* Legacy keeps the Admin badge at the far left of its toolbar. */
 body.legacy-mode .menu-header-start { display: none; }
-body.legacy-mode .menu-header-actions { flex: 1; }
+body.legacy-mode .menu-header-actions { flex: 1; justify-content: flex-end; }
 body.legacy-mode .menu-header-actions .admin-toggle { margin-right: auto; }
 /* Phones (modern): shorter labels so all the buttons fit on one row under the logo. */
 @media (max-width: 520px) {
@@ -1311,3 +1311,15 @@ body.legacy-mode .preset-row + .form-grid { margin-top: 0; }
 .menu-header button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 body.legacy-mode .tile:focus-visible { outline: 2px dotted #000; outline-offset: -5px; }
 body.legacy-mode .menu-header button:focus-visible { outline: 1px dotted #000; outline-offset: -4px; }
+
+/* Settings window (gear button): Music, Legacy Mode and Appearance as full-width rows. */
+.options-list { display: grid; gap: 10px; margin-top: 20px; }
+.options-list .option-row { display: flex; width: 100%; gap: 12px; padding: 14px 14px 14px 16px; border-radius: 14px; font-size: .95rem; letter-spacing: 0; }
+.options-list .option-row .admin-toggle-icon { width: 20px; height: 20px; flex: none; }
+.options-list .option-row span { flex: 1; text-align: left; }
+.options-list .option-row b { min-width: 46px; padding: 5px 10px; font-size: .8rem; text-align: center; }
+#menu-appearance b { color: #c3d9eb; }
+body.legacy-mode .options-list { gap: 6px; margin-top: 0; padding-top: 10px; }
+body.legacy-mode .options-list .option-row { padding: 6px 10px; border-radius: 3px; font-size: 12px; }
+body.legacy-mode .options-list .option-row .admin-toggle-icon { width: 16px; height: 16px; }
+body.legacy-mode #menu-appearance b { width: auto; height: auto; min-width: 0; border: 0; background: none; color: #0c32a8; font-size: 12px; font-weight: bold; }

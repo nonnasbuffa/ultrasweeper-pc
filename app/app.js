@@ -9,7 +9,8 @@ const dialogs = {
   stats: document.querySelector('#stats-screen'),
   duel: document.querySelector('#duel-screen'),
   pass: document.querySelector('#pass-screen'),
-  tutorial: document.querySelector('#tutorial-screen')
+  tutorial: document.querySelector('#tutorial-screen'),
+  options: document.querySelector('#options-screen')
 };
 
 const boardElement = document.querySelector('#board');
@@ -199,6 +200,7 @@ faceButton.addEventListener('click', restartGame);
 document.querySelector('#open-settings').addEventListener('click', openAppearance);
 document.querySelector('#menu-appearance').addEventListener('click', openAppearance);
 document.querySelector('#menu-help').addEventListener('click', () => openTutorial(false));
+document.querySelector('#menu-options').addEventListener('click', () => openDialog('options'));
 document.querySelector('#tutorial-yes').addEventListener('click', closeDialog);
 document.querySelector('#tutorial-no').addEventListener('click', () => {
   storageSet(tutorialStorageKey, 'seen');

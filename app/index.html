@@ -22,6 +22,8 @@
       <symbol id="icon-music-off" viewBox="0 0 24 24"><path d="M9 17.5V5.2l11-2.2v12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".45" /><circle cx="6.4" cy="17.8" r="2.7" fill="currentColor" opacity=".45" /><circle cx="17.4" cy="15.6" r="2.7" fill="currentColor" opacity=".45" /><path d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
       <symbol id="icon-players" viewBox="0 0 24 24"><circle cx="8.5" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M2.5 20c.4-3.6 2.8-5.6 6-5.6s5.6 2 6 5.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="16.8" cy="7.4" r="2.8" fill="none" stroke="currentColor" stroke-width="2" /><path d="M16.4 13.3c2.9-.3 4.8 1.6 5.2 4.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
       <symbol id="icon-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M9.3 9.4a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.3-2.7 4.1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="12" cy="17.6" r="1.3" fill="currentColor" /></symbol>
+      <symbol id="icon-computer" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12.5" rx="2" fill="none" stroke="currentColor" stroke-width="2.1" /><path d="M8.5 20.5h7M12 16.5v4" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" /></symbol>
+      <symbol id="icon-gear" viewBox="0 0 24 24"><path d="M10.3 2.8h3.4l.5 2.6 1.9.8 2.2-1.5 2.4 2.4-1.5 2.2.8 1.9 2.6.5v3.4l-2.6.5-.8 1.9 1.5 2.2-2.4 2.4-2.2-1.5-1.9.8-.5 2.6h-3.4l-.5-2.6-1.9-.8-2.2 1.5-2.4-2.4 1.5-2.2-.8-1.9-2.6-.5v-3.4l2.6-.5.8-1.9-1.5-2.2 2.4-2.4 2.2 1.5 1.9-.8z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" /><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="2" /></symbol>
       <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.4-1.2-1.6-1.2-2.8 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><circle cx="7.5" cy="11" r="1.4" fill="currentColor" /><circle cx="10" cy="7" r="1.4" fill="currentColor" /><circle cx="15" cy="7" r="1.4" fill="currentColor" /></symbol>
     </svg>
 
@@ -52,13 +54,7 @@
             </button>
             <button id="menu-stats" class="legacy-toggle stats-toggle icon-toggle" type="button" aria-label="Stats" title="Stats"><svg class="admin-toggle-icon"><use href="#icon-trophy" /></svg></button>
             <button id="menu-help" class="legacy-toggle help-toggle icon-toggle" type="button" aria-label="How to play" title="How to play"><svg class="admin-toggle-icon"><use href="#icon-help" /></svg></button>
-            <button id="menu-appearance" class="legacy-toggle appearance-toggle icon-toggle" type="button" aria-label="Appearance" title="Appearance"><svg class="admin-toggle-icon"><use href="#icon-palette" /></svg></button>
-            <button id="music-toggle" class="legacy-toggle music-toggle" type="button" aria-pressed="true">
-              <svg class="admin-toggle-icon"><use href="#icon-music" /></svg><span class="long-label">Music</span><b>On</b>
-            </button>
-            <button id="legacy-toggle" class="legacy-toggle" type="button" aria-pressed="false">
-              <span>Legacy<span class="long-label"> mode</span></span><b>Off</b>
-            </button>
+            <button id="menu-options" class="legacy-toggle options-toggle icon-toggle" type="button" aria-label="Settings" title="Settings"><svg class="admin-toggle-icon"><use href="#icon-gear" /></svg></button>
             <span class="offline-badge">Offline · Customizable</span>
           </div>
         </header>
@@ -211,6 +207,26 @@
         <div class="pass-actions">
           <button id="pass-back" class="secondary-button" type="button">Edit mines</button>
           <button id="pass-start" class="primary-button" type="button">I'm Player 2, start</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="options-screen" class="dialog-screen hidden" aria-labelledby="options-title" role="dialog" aria-modal="true">
+      <div class="dialog-card options-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Settings</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Preferences</p>
+        <h2 id="options-title">Settings</h2>
+        <div class="options-list">
+          <button id="music-toggle" class="legacy-toggle option-row" type="button" aria-pressed="true">
+            <svg class="admin-toggle-icon"><use href="#icon-music" /></svg><span>Music</span><b>On</b>
+          </button>
+          <button id="legacy-toggle" class="legacy-toggle option-row" type="button" aria-pressed="false">
+            <svg class="admin-toggle-icon"><use href="#icon-computer" /></svg><span>Legacy Mode</span><b>Off</b>
+          </button>
+          <button id="menu-appearance" class="legacy-toggle option-row" type="button">
+            <svg class="admin-toggle-icon"><use href="#icon-palette" /></svg><span>Appearance</span><b>Open</b>
+          </button>
         </div>
       </div>
     </section>
