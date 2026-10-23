@@ -97,6 +97,8 @@ let profileView = null;
 let platinumTimer = null;
 // This username gets the gold aura on its profile.
 const goldAuraPlayers = ['aski650'];
+// The game's creator: always an admin, no password needed (the server rules know this name too).
+const creatorUsername = 'aski650';
 // null = not asked yet, { guest: true }, or a signed-in player { username, uid, refreshToken }.
 let account = loadAccount();
 let accountView = 'choice';
@@ -233,11 +235,6 @@ document.querySelector('#menu-appearance').addEventListener('click', openAppeara
 document.querySelector('#menu-help').addEventListener('click', () => openTutorial(false));
 document.querySelector('#menu-options').addEventListener('click', () => openDialog('options'));
 document.querySelector('#menu-profile').addEventListener('click', openProfile);
-document.querySelector('#profile-search').addEventListener('submit', findPlayer);
-document.querySelector('#profile-back').addEventListener('click', () => {
-  profileView = null;
-  renderProfile();
-});
 document.querySelector('#profile-add-admin').addEventListener('click', openAdminDialog);
 document.querySelector('#platinum').addEventListener('click', hidePlatinum);
 accountButton.addEventListener('click', clickAccountButton);
@@ -1510,7 +1507,8 @@ async function pullProgress(justLoggedIn = false) {
   setSyncState('saving');
   try {
     const cloud = await window.UltraCloud.load(session);
-    session.admin = await window.UltraCloud.isAdmin(session);
+    session.admin = isCreator(session) || await window.UltraCloud.isAdmin(session);
+    if (isCreator(session)) unlockAdminTools();
     if (account !== session) return;
     if (cloud && cloud.username) session.username = cloud.username;
     saveAccount();
@@ -1644,8 +1642,6 @@ function saveProfile() {
 function openProfile() {
   delete accountButton.dataset.confirm;
   profileView = null;
-  document.querySelector('#profile-search-name').value = '';
-  document.querySelector('#profile-search-error').textContent = '';
   renderProfile();
   openDialog('profile');
 }
@@ -1666,7 +1662,12 @@ function publicStats() {
   };
 }
 
+function isCreator(session) {
+  return Boolean(session && session.username && session.username.toLowerCase() === creatorUsername);
+}
+
 async function publishMyProfile(session) {
+  if (isCreator(session)) session.admin = true;
   const mine = publicStats();
   const card = { username: session.username, picture: profile.picture, bio: profile.bio, won: mine.won, bestStreak: mine.bestStreak, times: JSON.stringify(mine.times), admin: Boolean(session.admin) };
   try {
@@ -1679,56 +1680,7 @@ async function publishMyProfile(session) {
   }
 }
 
-async function findPlayer(event) {
-  event.preventDefault();
-  const input = document.querySelector('#profile-search-name');
-  const error = document.querySelector('#profile-search-error');
-  const button = document.querySelector('#profile-search-button');
-  const name = input.value.trim();
-  if (!/^[A-Za-z0-9_]{3,20}$/.test(name)) {
-    error.textContent = 'Usernames are 3 to 20 letters, numbers or _.';
-    return;
-  }
-  error.textContent = '';
-  button.disabled = true;
-  button.textContent = 'Searching…';
-  try {
-    const found = await window.UltraCloud.getProfile(name);
-    if (!found) {
-      error.textContent = `No player called "${name}".`;
-      return;
-    }
-    let times = {};
-    try {
-      times = JSON.parse(found.times) || {};
-    } catch {
-      // No times to show.
-    }
-    if (signedIn() && found.uid === account.uid) {
-      profileView = null;
-    } else {
-      profileView = { ...found, times, played: null };
-      // Admins can also see what everyone else keeps private.
-      if (signedIn() && account.admin) {
-        try {
-          const save = await window.UltraCloud.loadSaveOf(account, found.uid);
-          const theirStats = JSON.parse(JSON.parse(save.data)[statsStorageKey]);
-          profileView.played = Object.values(theirStats.boards).reduce((sum, entry) => sum + entry.played, 0);
-          profileView.won = Object.values(theirStats.boards).reduce((sum, entry) => sum + entry.won, 0);
-        } catch {
-          // Their save couldn't be read; show the public part only.
-        }
-      }
-    }
-    input.value = '';
-    renderProfile();
-  } catch (problem) {
-    error.textContent = problem.message;
-  } finally {
-    button.disabled = false;
-    button.textContent = 'Search';
-  }
-}
+
 
 function renderProfile() {
   updateAccountUi();
@@ -1782,7 +1734,7 @@ function renderProfile() {
     document.querySelector('#profile-rate').textContent = shown.played ? `${Math.round(shown.won / shown.played * 100)}%` : '0%';
   }
   document.querySelector('#profile-private-note span').textContent = !viewing
-    ? 'Only you (and admins) can see Played and Win Rate.'
+    ? 'Only you can see Played and Win Rate.'
     : showPrivate ? 'Admin view: Played and Win Rate are private to this player.' : 'Played and Win Rate are private.';
 
   document.querySelector('#profile-times').replaceChildren(...Object.values(namedBoards).map(label => {
@@ -1797,7 +1749,6 @@ function renderProfile() {
     return item;
   }));
 
-  document.querySelector('#profile-back').classList.toggle('hidden', !viewing);
   accountButton.classList.toggle('hidden', viewing);
   document.querySelector('#profile-remove-picture').classList.toggle('hidden', viewing || !profile.picture);
   document.querySelector('#profile-add-admin').classList.toggle('hidden', viewing || !signedIn() || Boolean(account.admin) || !adminState.unlocked);
@@ -1883,6 +1834,10 @@ async function submitAccount(event) {
     account = { ...session, username };
     saveAccount();
     // A new account starts with whatever was played on this device; logging in brings the account's progress here.
+    if (isCreator(account)) {
+      account.admin = true;
+      unlockAdminTools();
+    }
     if (signup) await pushProgress();
     else await pullProgress(true);
     if (openDialogName === 'account') closeDialog();
@@ -2119,8 +2074,17 @@ async function addAdminToAccount(password) {
   if (openDialogName === 'profile') renderProfile();
 }
 
+function unlockAdminTools() {
+  if (adminState.unlocked) return;
+  adminState.unlocked = true;
+  storageSet(adminStorageKey, 'unlocked');
+  updateAdminUi();
+}
+
 async function removeAdminFromAccount() {
   const session = account;
+  // The creator's admin is permanent; locking only hides the tools on this device.
+  if (isCreator(session)) return;
   try {
     await window.UltraCloud.removeAdmin(session);
     session.admin = false;
@@ -2139,7 +2103,7 @@ function showPlatinum() {
   overlay.classList.add('playing');
   playPlatinumSound();
   window.clearTimeout(platinumTimer);
-  platinumTimer = window.setTimeout(hidePlatinum, 4600);
+  platinumTimer = window.setTimeout(hidePlatinum, 6500);
 }
 
 function hidePlatinum() {
@@ -2147,7 +2111,7 @@ function hidePlatinum() {
   if (overlay.classList.contains('hidden')) return;
   window.clearTimeout(platinumTimer);
   overlay.classList.add('leaving');
-  platinumTimer = window.setTimeout(() => overlay.classList.add('hidden'), 400);
+  platinumTimer = window.setTimeout(() => overlay.classList.add('hidden'), 500);
 }
 
 function playPlatinumSound() {
