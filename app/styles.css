@@ -1519,3 +1519,23 @@ body.legacy-mode .stats-row small { color: #555; font-size: 11px; }
 body.legacy-mode .stats-empty { padding: 10px; border: 1px dashed #b0b0a0; border-radius: 0; color: #555; font: 12px Tahoma, sans-serif; }
 body.legacy-mode .stats-footer { margin-top: 8px; }
 body.legacy-mode .stats-clear { color: #b00000; }
+
+/* Legacy: the trophy arrives as a Windows XP tray balloon above the clock. Just a short fade, nothing
+   spinning, blurred or glowing, so it stays light on older PCs. */
+body.legacy-mode .platinum { top: auto; right: 8px; bottom: calc(30px + 16px + var(--safe-bottom, 0px)); left: auto; width: min(320px, calc(100vw - 16px)); }
+body.legacy-mode .platinum-toast { position: relative; padding: 0; overflow: visible; border: 1px solid #000; border-radius: 7px; background: #ffffe1; box-shadow: 3px 3px 5px #0005; }
+body.legacy-mode .platinum-toast::before { position: absolute; inset: auto 46px -15px auto; width: 0; height: 0; border-top: 15px solid #000; border-left: 15px solid transparent; background: none; content: ''; animation: none; }
+body.legacy-mode .platinum-toast::after { position: absolute; right: 47px; bottom: -13px; width: 0; height: 0; border-top: 13px solid #ffffe1; border-left: 13px solid transparent; content: ''; }
+body.legacy-mode .platinum-inner { align-items: flex-start; gap: 10px; padding: 9px 12px 10px 10px; border-radius: 7px; background: none; backdrop-filter: none; }
+body.legacy-mode .platinum-art { width: 34px; height: 34px; border-radius: 0; background: none; box-shadow: none; }
+body.legacy-mode .platinum-art-trophy { width: 34px; height: 34px; filter: drop-shadow(0 0 1px #3d5270); }
+body.legacy-mode .platinum-kicker { color: #000; font: bold 12px Tahoma, sans-serif; }
+body.legacy-mode .platinum-title { gap: 4px; margin-top: 5px !important; color: #000; font: 11px Tahoma, sans-serif; letter-spacing: 0; }
+body.legacy-mode .platinum-icon { width: 14px; height: 14px; filter: drop-shadow(0 0 1px #3d5270); }
+body.legacy-mode .platinum-sub { margin-top: 1px !important; background: none; color: #444; font: 11px Tahoma, sans-serif; letter-spacing: 0; text-transform: none; }
+body.legacy-mode .platinum-gleam, body.legacy-mode .platinum-spark { display: none; }
+body.legacy-mode .platinum.playing .platinum-toast { animation: xp-balloon-in .25s linear both; }
+body.legacy-mode .platinum.leaving .platinum-toast { animation: xp-balloon-out .25s linear both; }
+body.legacy-mode .platinum.playing .platinum-art, body.legacy-mode .platinum.playing .platinum-icon, body.legacy-mode .platinum.playing .platinum-kicker, body.legacy-mode .platinum.playing .platinum-title > span, body.legacy-mode .platinum.playing .platinum-sub { animation: none; }
+@keyframes xp-balloon-in { from { opacity: 0; } }
+@keyframes xp-balloon-out { to { opacity: 0; } }
