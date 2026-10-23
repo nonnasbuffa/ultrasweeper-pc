@@ -252,6 +252,13 @@ boardElement.addEventListener('contextmenu', event => {
   const index = tileIndex(event.target);
   if (index === null) return;
   event.preventDefault();
+  // Holding a tile on a phone also fires this, on top of the long-press timer: only the first of the two may flag.
+  if (longPress) {
+    if (longPress.fired) return;
+    window.clearTimeout(longPress.timer);
+    longPress.fired = true;
+    if (navigator.vibrate) navigator.vibrate(25);
+  }
   toggleFlag(index);
 });
 boardElement.addEventListener('auxclick', event => {
@@ -275,7 +282,10 @@ boardElement.addEventListener('keydown', event => {
   tileButtons[y * game.width + x].focus();
 });
 boardElement.addEventListener('pointerdown', event => {
-  if (event.pointerType !== 'touch') return;
+  if (event.pointerType !== 'touch') {
+    longPress = null;
+    return;
+  }
   const index = tileIndex(event.target);
   if (index === null) return;
   longPress = { index, fired: false, timer: window.setTimeout(() => {

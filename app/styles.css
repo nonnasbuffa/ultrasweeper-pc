@@ -94,7 +94,7 @@ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .game-hint { margin: 12px 0 0; color: #6f7f94; font-size: .76rem; text-align: center; }
 .board-wrap { display: block; width: max-content; margin: 0 auto; max-width: calc(100vw - 40px); overflow: auto; padding: 12px; border-radius: 14px; }
 .board { display: grid; grid-template-columns: repeat(var(--columns, 9), var(--tile-size)); gap: 2px; width: max-content; padding: 2px; border-radius: 6px; background: #273346; }
-.tile { display: grid; place-items: center; width: var(--tile-size); height: var(--tile-size); padding: 0; border: 0; border-radius: 5px; background: #53657d url("assets/covered.svg") center / cover; color: #fff; font-size: 1.05rem; font-weight: 850; line-height: 1; user-select: none; -webkit-user-select: none; touch-action: manipulation; transition: filter .15s ease, transform .15s var(--ease-out); }
+.tile { display: grid; place-items: center; -webkit-touch-callout: none; width: var(--tile-size); height: var(--tile-size); padding: 0; border: 0; border-radius: 5px; background: #53657d url("assets/covered.svg") center / cover; color: #fff; font-size: 1.05rem; font-weight: 850; line-height: 1; user-select: none; -webkit-user-select: none; touch-action: manipulation; transition: filter .15s ease, transform .15s var(--ease-out); }
 .tile:hover:not(.revealed) { filter: brightness(1.18); transform: translateY(-1px); }
 .tile:active:not(.revealed) { filter: brightness(.9); transform: scale(.92); }
 .tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
