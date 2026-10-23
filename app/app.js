@@ -201,6 +201,7 @@ document.querySelector('#menu-appearance').addEventListener('click', openAppeara
 document.querySelector('#menu-help').addEventListener('click', () => openTutorial(false));
 document.querySelector('#tutorial-yes').addEventListener('click', closeDialog);
 document.querySelector('#tutorial-no').addEventListener('click', () => {
+  storageSet(tutorialStorageKey, 'seen');
   showTutorialStep(0);
   document.querySelector('#tutorial-next').focus();
 });
@@ -383,7 +384,6 @@ function runLoadingScreen() {
 }
 
 function openTutorial(welcome) {
-  storageSet(tutorialStorageKey, 'seen');
   document.querySelector('#tutorial-welcome').classList.toggle('hidden', !welcome);
   document.querySelector('#tutorial-steps').classList.toggle('hidden', welcome);
   if (!welcome) showTutorialStep(0);
@@ -755,6 +755,8 @@ function openDialog(name) {
 function closeDialog() {
   if (!openDialogName) return;
   const dialog = dialogs[openDialogName];
+  // Answering the first-launch question in any way (yes, no or closing it) means it's never asked again.
+  if (openDialogName === 'tutorial') storageSet(tutorialStorageKey, 'seen');
   openDialogName = null;
   dialog.classList.add('closing');
   const finish = () => {
