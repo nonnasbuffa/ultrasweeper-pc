@@ -171,6 +171,11 @@
         <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
         <p class="eyebrow">New board</p>
         <h2 id="custom-title">Custom game</h2>
+        <div class="preset-row" role="group" aria-label="Presets">
+          <button class="preset-button" type="button" data-preset="16,16,40"><b>Medium</b><span>16 × 16</span><small>40 mines</small></button>
+          <button class="preset-button" type="button" data-preset="30,16,99"><b>Hard</b><span>30 × 16</span><small>99 mines</small></button>
+          <button class="preset-button" type="button" data-preset="30,24,180"><b>Insane</b><span>30 × 24</span><small>180 mines</small></button>
+        </div>
         <div class="form-grid">
           <label>Width<input id="board-width" type="number" min="5" max="50" value="16" required /></label>
           <label>Height<input id="board-height" type="number" min="5" max="50" value="16" required /></label>

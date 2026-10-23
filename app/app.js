@@ -48,7 +48,8 @@ const adminNote = document.querySelector('#admin-note');
 const adminPanelStorageKey = 'offline-minesweeper-admin-panel-v1';
 const statsStorageKey = 'offline-minesweeper-stats-v1';
 const leaderboardSize = 10;
-const namedBoards = { '9x9x10': 'Beginner', '16x16x40': 'Intermediate', '30x16x99': 'Expert' };
+// The classic Windows sizes (Beginner, Intermediate = Medium, Expert = Hard), plus our own Insane.
+const namedBoards = { '9x9x10': 'Beginner', '16x16x40': 'Medium', '30x16x99': 'Hard', '30x24x180': 'Insane' };
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const longPressDelay = 420;
 // How close (in pixels) the game window must get to the centre before it snaps there.
@@ -135,8 +136,22 @@ updateClock();
 window.setInterval(updateClock, 15000);
 
 document.querySelector('#normal-game').addEventListener('click', () => startGame(9, 9, 10));
-document.querySelector('#custom-game').addEventListener('click', () => openDialog('custom'));
+document.querySelector('#custom-game').addEventListener('click', () => {
+  markPreset();
+  openDialog('custom');
+});
 document.querySelector('#custom-form').addEventListener('submit', startCustomGame);
+document.querySelector('.preset-row').addEventListener('click', event => {
+  const preset = event.target.closest('[data-preset]');
+  if (!preset) return;
+  const [width, height, mines] = preset.dataset.preset.split(',');
+  document.querySelector('#board-width').value = width;
+  document.querySelector('#board-height').value = height;
+  document.querySelector('#mine-count').value = mines;
+  document.querySelector('#custom-error').textContent = '';
+  markPreset();
+});
+document.querySelector('#custom-form').addEventListener('input', markPreset);
 document.querySelector('#duel-game').addEventListener('click', () => openDuelDialog());
 document.querySelector('#duel-form').addEventListener('submit', startDuelSetup);
 duelPrimary.addEventListener('click', () => {
@@ -637,7 +652,8 @@ function fitArenaToWindow() {
   const safe = safeArea();
   const availableHeight = window.innerHeight - safe.top - safe.bottom - (legacyMode ? 86 : 64) - (rect.height - boardRect.height);
   const fit = scale * Math.min(availableWidth / boardRect.width, availableHeight / boardRect.height);
-  arenaFit = Math.max(0.5, fit);
+  // Low enough that the tall Insane board still fits a short window.
+  arenaFit = Math.max(0.4, fit);
   applyArena();
 }
 
@@ -692,6 +708,16 @@ function closeDialog() {
   else window.setTimeout(finish, 180);
   resumeTimer();
   if (dialogReturnFocus && document.contains(dialogReturnFocus)) dialogReturnFocus.focus();
+}
+
+// Highlights the preset that matches the numbers in the form, if any.
+function markPreset() {
+  const current = ['#board-width', '#board-height', '#mine-count'].map(id => Number(document.querySelector(id).value)).join(',');
+  document.querySelectorAll('.preset-button').forEach(button => {
+    const active = button.dataset.preset === current;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', active);
+  });
 }
 
 function startCustomGame(event) {

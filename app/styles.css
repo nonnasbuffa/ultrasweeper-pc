@@ -1280,3 +1280,25 @@ body.legacy-mode .tutorial-actions { justify-content: center; gap: 6px; margin-t
 body.legacy-mode .tutorial-actions button { flex: 0 0 auto; }
 body.legacy-mode .dialog-card .tutorial-actions .primary-button { margin: 0; }
 @media (prefers-reduced-motion: reduce) { .tutorial-mark { animation: none; } }
+
+/* Custom game presets */
+.preset-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+.preset-button { display: grid; gap: 2px; padding: 12px 8px; border: 1px solid #2c3544; border-radius: 12px; background: #202937; color: #e5edf9; text-align: center; transition: border-color .2s ease, background .2s ease, transform .2s var(--ease-out); }
+.preset-button:hover { border-color: var(--accent); transform: translateY(-1px); }
+.preset-button.active { border-color: var(--accent); background: #2a3a50; box-shadow: 0 0 0 1px var(--accent) inset; }
+.preset-button b { font-size: 1rem; }
+.preset-button span { color: #d8e9f5; font-size: .85rem; font-weight: 700; }
+.preset-button small { color: #9cabbe; font-size: .76rem; }
+.preset-button:nth-child(2) b { color: #ffb86b; }
+.preset-button:nth-child(3) b { color: #ff8a8a; }
+.preset-row + .form-grid { margin-top: 16px; }
+
+body.legacy-mode .preset-row { gap: 6px; margin-top: 0; padding-top: 10px; }
+body.legacy-mode .preset-button { gap: 0; padding: 5px 4px; border: 1px solid #003c74; border-radius: 3px; background: var(--xp-button); color: #000; font: 12px Tahoma, sans-serif; }
+body.legacy-mode .preset-button:hover { transform: none; box-shadow: inset 0 -2px #f8b636, inset 0 2px #fee6a8, inset 2px 0 #fbd88a, inset -2px 0 #fbd88a; }
+body.legacy-mode .preset-button.active { background: linear-gradient(180deg, #e5e4de, #e3e2da 80%, #f0efea); box-shadow: inset 1px 1px 2px #0003; }
+body.legacy-mode .preset-button b { color: #0c32a8; font-size: 12px; }
+body.legacy-mode .preset-button:nth-child(2) b { color: #a85a00; }
+body.legacy-mode .preset-button:nth-child(3) b { color: #b00000; }
+body.legacy-mode .preset-button span, body.legacy-mode .preset-button small { color: #333; font-size: 11px; }
+body.legacy-mode .preset-row + .form-grid { margin-top: 0; }
