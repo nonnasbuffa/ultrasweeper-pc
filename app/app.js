@@ -10,7 +10,8 @@ const dialogs = {
   duel: document.querySelector('#duel-screen'),
   pass: document.querySelector('#pass-screen'),
   tutorial: document.querySelector('#tutorial-screen'),
-  options: document.querySelector('#options-screen')
+  options: document.querySelector('#options-screen'),
+  account: document.querySelector('#account-screen')
 };
 
 const boardElement = document.querySelector('#board');
@@ -80,6 +81,20 @@ const tutorialSteps = [
     text: () => 'In a game, the left counter shows how many mines are left to flag, the right one is your time, and the face starts a new game. Good luck!' }
 ];
 let tutorialStep = 0;
+// Accounts: what an account carries between devices is the stats plus the settings that make the game feel like yours.
+// (Custom pictures and songs stay on each device: they're far too big to send around.)
+const accountStorageKey = 'offline-minesweeper-account-v1';
+const syncStorageKey = 'offline-minesweeper-sync-v1';
+const syncedKeys = [statsStorageKey, legacyStorageKey, accentStorageKey, musicStorageKey, volumeStorageKey, tutorialStorageKey];
+const accountRow = document.querySelector('#account-row');
+// null = not asked yet, { guest: true }, or a signed-in player { username, uid, refreshToken }.
+let account = loadAccount();
+let accountView = 'choice';
+let accountFirstLaunch = false;
+let syncState = 'saved';
+let syncTimer = null;
+// True while a cloud save is being copied in, so copying it doesn't count as a new change.
+let applyingCloud = false;
 
 const assetDefinitions = [
   { id: 'face', name: 'Smiley face', hint: 'Default and in-progress face' },
@@ -141,6 +156,8 @@ applyArena();
 runLoadingScreen();
 updateClock();
 window.setInterval(updateClock, 15000);
+updateAccountUi();
+pullProgress();
 
 document.querySelector('#normal-game').addEventListener('click', () => startGame(9, 9, 10));
 document.querySelector('#custom-game').addEventListener('click', () => {
@@ -204,7 +221,25 @@ faceButton.addEventListener('click', restartGame);
 document.querySelector('#open-settings').addEventListener('click', openAppearance);
 document.querySelector('#menu-appearance').addEventListener('click', openAppearance);
 document.querySelector('#menu-help').addEventListener('click', () => openTutorial(false));
-document.querySelector('#menu-options').addEventListener('click', () => openDialog('options'));
+document.querySelector('#menu-options').addEventListener('click', () => {
+  delete accountRow.dataset.confirm;
+  updateAccountUi();
+  openDialog('options');
+});
+accountRow.addEventListener('click', clickAccountRow);
+document.querySelector('#account-signup').addEventListener('click', () => showAccountView('signup'));
+document.querySelector('#account-login').addEventListener('click', () => showAccountView('login'));
+document.querySelector('#account-guest').addEventListener('click', closeDialog);
+document.querySelector('#account-back').addEventListener('click', () => showAccountView('choice'));
+document.querySelector('#account-switch').addEventListener('click', () => showAccountView(accountView === 'signup' ? 'login' : 'signup'));
+document.querySelector('#account-form').addEventListener('submit', submitAccount);
+// Changes made offline go up as soon as the connection is back, and right away when the app is put away.
+window.addEventListener('online', () => {
+  if (signedIn() && loadSyncInfo().dirty) pushProgress();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && syncTimer) pushProgress();
+});
 document.querySelector('#tutorial-yes').addEventListener('click', closeDialog);
 document.querySelector('#tutorial-no').addEventListener('click', () => {
   storageSet(tutorialStorageKey, 'seen');
@@ -383,15 +418,19 @@ function runLoadingScreen() {
     const wait = Math.max(0, minimumTime - (performance.now() - startedAt));
     window.setTimeout(() => {
       loadingScreen.classList.add('done');
-      // First launch: ask whether the player already knows the game.
-      if (storageGet(tutorialStorageKey) !== 'seen') window.setTimeout(() => {
-        if (!openDialogName && currentScreen === 'mode') openTutorial(true);
-      }, 500);
+      // First launch: sign up / log in / guest, then whether the player already knows the game.
+      window.setTimeout(firstLaunchQuestions, 500);
       document.body.classList.remove('is-loading');
       screens.mode.classList.add('screen-enter');
       window.setTimeout(() => loadingScreen.remove(), 700);
     }, wait);
   });
+}
+
+function firstLaunchQuestions() {
+  if (openDialogName || currentScreen !== 'mode') return;
+  if (!account) openAccount('choice', true);
+  else if (storageGet(tutorialStorageKey) !== 'seen') openTutorial(true);
 }
 
 function openTutorial(welcome) {
@@ -768,7 +807,18 @@ function closeDialog() {
   const dialog = dialogs[openDialogName];
   // Answering the first-launch question in any way (yes, no or closing it) means it's never asked again.
   if (openDialogName === 'tutorial') storageSet(tutorialStorageKey, 'seen');
+  // Closing the first question without choosing means playing as a guest; the tutorial question comes next.
+  const afterAccount = openDialogName === 'account' && accountFirstLaunch;
+  if (openDialogName === 'account' && !account) {
+    account = { guest: true };
+    saveAccount();
+    updateAccountUi();
+  }
   openDialogName = null;
+  if (afterAccount) {
+    accountFirstLaunch = false;
+    window.setTimeout(firstLaunchQuestions, 350);
+  }
   dialog.classList.add('closing');
   const finish = () => {
     dialog.classList.add('hidden');
@@ -1324,6 +1374,7 @@ function storageGet(key) {
 function storageSet(key, value) {
   try {
     localStorage.setItem(key, value);
+    if (syncedKeys.includes(key)) progressChanged();
     return true;
   } catch {
     return false;
@@ -1333,8 +1384,266 @@ function storageSet(key, value) {
 function storageRemove(key) {
   try {
     localStorage.removeItem(key);
+    if (syncedKeys.includes(key)) progressChanged();
   } catch {
     // Storage unavailable; nothing to remove.
+  }
+}
+
+// ---- Accounts and cloud saves (the server side is in cloud.js) ----
+function loadAccount() {
+  try {
+    const stored = JSON.parse(storageGet(accountStorageKey));
+    return stored && (stored.guest || stored.uid) ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveAccount() {
+  if (!account) {
+    storageRemove(accountStorageKey);
+    return;
+  }
+  const saved = account.guest ? { guest: true } : { username: account.username, uid: account.uid, refreshToken: account.refreshToken };
+  storageSet(accountStorageKey, JSON.stringify(saved));
+}
+
+function signedIn() {
+  return Boolean(account && account.uid);
+}
+
+// When this device's progress last changed, and whether the account has that change yet.
+function loadSyncInfo() {
+  try {
+    return JSON.parse(localStorage.getItem(syncStorageKey)) || { updatedAt: 0, dirty: false };
+  } catch {
+    return { updatedAt: 0, dirty: false };
+  }
+}
+
+function saveSyncInfo(info) {
+  try {
+    localStorage.setItem(syncStorageKey, JSON.stringify(info));
+  } catch {
+    // Storage unavailable; the next change will try again.
+  }
+}
+
+function progressChanged() {
+  if (applyingCloud) return;
+  saveSyncInfo({ updatedAt: Date.now(), dirty: true });
+  if (!signedIn()) return;
+  // Wait a moment so a burst of changes (a game ending, a slider being dragged) goes up as one save.
+  window.clearTimeout(syncTimer);
+  syncTimer = window.setTimeout(pushProgress, 1500);
+}
+
+function collectProgress() {
+  return Object.fromEntries(syncedKeys.map(key => [key, storageGet(key)]));
+}
+
+async function pushProgress() {
+  window.clearTimeout(syncTimer);
+  syncTimer = null;
+  if (!signedIn()) return;
+  const session = account;
+  const sync = loadSyncInfo();
+  const updatedAt = sync.updatedAt || Date.now();
+  setSyncState('saving');
+  try {
+    await window.UltraCloud.save(session, { username: session.username, data: JSON.stringify(collectProgress()), updatedAt });
+    if (account !== session) return;
+    saveAccount();
+    // Only mark it saved if nothing else changed while it was uploading.
+    if (loadSyncInfo().updatedAt === sync.updatedAt) saveSyncInfo({ updatedAt, dirty: false });
+    setSyncState('saved');
+  } catch (error) {
+    cloudFailed(error, session);
+  }
+}
+
+// On launch the newer of the two saves wins. Right after logging in, the account's save always wins.
+async function pullProgress(justLoggedIn = false) {
+  if (!signedIn()) return;
+  const session = account;
+  setSyncState('saving');
+  try {
+    const cloud = await window.UltraCloud.load(session);
+    if (account !== session) return;
+    if (cloud && cloud.username) session.username = cloud.username;
+    saveAccount();
+    const sync = loadSyncInfo();
+    if (!cloud || (!justLoggedIn && sync.dirty && sync.updatedAt > cloud.updatedAt)) {
+      await pushProgress();
+      return;
+    }
+    if (justLoggedIn || cloud.updatedAt !== sync.updatedAt) applyProgress(cloud);
+    setSyncState('saved');
+  } catch (error) {
+    cloudFailed(error, session);
+  }
+}
+
+function applyProgress(cloud) {
+  let data = {};
+  try {
+    data = JSON.parse(cloud.data) || {};
+  } catch {
+    // A damaged save is treated as empty.
+  }
+  applyingCloud = true;
+  syncedKeys.forEach(key => {
+    if (typeof data[key] === 'string') storageSet(key, data[key]);
+    else storageRemove(key);
+  });
+  applyingCloud = false;
+  saveSyncInfo({ updatedAt: cloud.updatedAt, dirty: false });
+  reloadProgress();
+}
+
+// Re-reads everything an account carries, after it was replaced by a cloud save or a log out.
+function reloadProgress() {
+  stats = loadStats();
+  legacyMode = storageGet(legacyStorageKey) === 'true';
+  accentColor = storageGet(accentStorageKey) || defaultAccent;
+  musicOn = storageGet(musicStorageKey) !== 'false';
+  musicVolume = storageGet(volumeStorageKey) === null ? 100 : Number(storageGet(volumeStorageKey));
+  applyLegacyMode();
+  applyAccentColor();
+  applyVolume();
+  applyMusic();
+  if (currentScreen === 'game') keepArenaOnScreen();
+  if (openDialogName === 'stats') renderStats();
+}
+
+function cloudFailed(error, session) {
+  if (account !== session) return;
+  if (error.kind === 'signed-out') {
+    const username = session.username;
+    logOut();
+    openAccount('login');
+    document.querySelector('#account-username').value = username;
+    document.querySelector('#account-error').textContent = error.message;
+    return;
+  }
+  setSyncState(error.kind === 'offline' ? 'offline' : 'error');
+}
+
+function logOut() {
+  window.clearTimeout(syncTimer);
+  syncTimer = null;
+  account = null;
+  saveAccount();
+  // The stats belong to the account, so they leave with it. Settings stay as they are.
+  applyingCloud = true;
+  storageRemove(statsStorageKey);
+  applyingCloud = false;
+  saveSyncInfo({ updatedAt: 0, dirty: false });
+  stats = loadStats();
+  syncState = 'saved';
+  updateAccountUi();
+}
+
+function setSyncState(state) {
+  syncState = state;
+  updateAccountUi();
+}
+
+function updateAccountUi() {
+  const action = accountRow.querySelector('b');
+  const status = document.querySelector('#account-status');
+  if (signedIn()) {
+    document.querySelector('#account-name').textContent = account.username;
+    status.textContent = {
+      saving: 'Saving…',
+      saved: 'Progress saved to your account',
+      offline: "Offline. Saves when you're back online",
+      error: "Couldn't save. Trying again soon"
+    }[syncState];
+    action.textContent = accountRow.dataset.confirm ? 'Sure?' : 'Log Out';
+  } else {
+    document.querySelector('#account-name').textContent = 'Guest';
+    status.textContent = 'Progress only saved on this device';
+    action.textContent = 'Sign In';
+  }
+}
+
+async function clickAccountRow() {
+  if (!signedIn()) {
+    openAccount('choice');
+    return;
+  }
+  if (!accountRow.dataset.confirm) {
+    accountRow.dataset.confirm = 'yes';
+    updateAccountUi();
+    return;
+  }
+  // Send any last change up before leaving.
+  if (loadSyncInfo().dirty) await pushProgress();
+  logOut();
+  openAccount('choice', true);
+}
+
+function openAccount(view, firstLaunch = false) {
+  accountFirstLaunch = firstLaunch;
+  showAccountView(view);
+  openDialog('account');
+}
+
+function showAccountView(view) {
+  accountView = view;
+  const choice = view === 'choice';
+  document.querySelector('#account-choice').classList.toggle('hidden', !choice);
+  document.querySelector('#account-form').classList.toggle('hidden', choice);
+  if (choice) {
+    window.setTimeout(() => document.querySelector('#account-signup').focus(), 60);
+    return;
+  }
+  const signup = view === 'signup';
+  document.querySelector('#account-form-eyebrow').textContent = signup ? 'New Account' : 'Welcome Back';
+  document.querySelector('#account-form-title').textContent = signup ? 'Create Account' : 'Log In';
+  document.querySelector('#account-submit').textContent = signup ? 'Sign Up' : 'Log In';
+  document.querySelector('#account-switch-text').textContent = signup ? 'Already have an account?' : 'New here?';
+  document.querySelector('#account-switch').textContent = signup ? 'Log In' : 'Sign Up';
+  document.querySelector('#account-password').autocomplete = signup ? 'new-password' : 'current-password';
+  document.querySelector('#account-password').value = '';
+  document.querySelector('#account-error').textContent = '';
+  window.setTimeout(() => document.querySelector('#account-username').focus(), 60);
+}
+
+async function submitAccount(event) {
+  event.preventDefault();
+  const username = document.querySelector('#account-username').value.trim();
+  const password = document.querySelector('#account-password').value;
+  const error = document.querySelector('#account-error');
+  const button = document.querySelector('#account-submit');
+  if (button.disabled) return;
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
+    error.textContent = 'Usernames are 3 to 20 letters, numbers or _ (no spaces).';
+    return;
+  }
+  if (password.length < 6) {
+    error.textContent = 'Your password needs at least 6 characters.';
+    return;
+  }
+  const signup = accountView === 'signup';
+  error.textContent = '';
+  button.disabled = true;
+  button.textContent = signup ? 'Creating…' : 'Logging in…';
+  try {
+    const session = await (signup ? window.UltraCloud.signUp(username, password) : window.UltraCloud.logIn(username, password));
+    account = { ...session, username };
+    saveAccount();
+    // A new account starts with whatever was played on this device; logging in brings the account's progress here.
+    if (signup) await pushProgress();
+    else await pullProgress(true);
+    if (openDialogName === 'account') closeDialog();
+  } catch (problem) {
+    error.textContent = problem.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = signup ? 'Sign Up' : 'Log In';
   }
 }
 

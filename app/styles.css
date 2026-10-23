@@ -1345,3 +1345,32 @@ body.legacy-mode .volume-row input::-webkit-slider-thumb { width: 11px; height: 
 body.legacy-mode .volume-row output { color: #333; font-size: 11px; }
 .volume-row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 body.legacy-mode .volume-row input { padding: 0; }
+
+/* ==========================================================================
+   Accounts: first-launch choice, sign up / log in, and the row in Settings
+   ========================================================================== */
+.account-card { text-align: center; }
+.account-card .form-grid { margin-top: 18px; text-align: left; }
+.account-card .form-error { margin-bottom: 0; }
+.account-card .tutorial-actions { margin-top: 12px; }
+.account-actions { display: grid; gap: 10px; margin-top: 22px; }
+.account-actions .text-button { justify-content: center; }
+.account-switch { margin: 14px 0 0; color: #9cabbe; font-size: .88rem; }
+.account-switch .text-button { display: inline; padding: 2px 4px; color: var(--accent); font-size: inherit; }
+#account-row .account-text { display: grid; flex: 1; gap: 2px; text-align: left; }
+#account-row .account-text strong { font-weight: 750; overflow-wrap: anywhere; }
+#account-row .account-text small { color: #9cabbe; font-size: .78rem; font-weight: 600; }
+#account-row b { color: #c3d9eb; white-space: nowrap; }
+#account-row[data-confirm] b { color: #ff9a9a; }
+
+body.legacy-mode .account-card .form-grid { margin-top: 0; }
+body.legacy-mode .account-actions { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+body.legacy-mode .dialog-card .account-actions .primary-button { min-width: 0; margin: 0; }
+body.legacy-mode .account-actions button { min-width: 84px; }
+body.legacy-mode .account-actions .text-button { border: 1px solid #003c74; border-radius: 3px; background: var(--xp-button); }
+body.legacy-mode .account-switch { margin: 8px 0 2px; color: #333; font: 11px Tahoma, sans-serif; }
+body.legacy-mode .account-switch .text-button { display: inline; padding: 0 2px; color: #0c32a8; font: inherit; text-decoration: underline; }
+body.legacy-mode .account-switch .text-button:hover, body.legacy-mode .account-switch .text-button:focus-visible { background: none; color: #0c32a8; }
+body.legacy-mode #account-row .account-text small { color: #555; font-size: 11px; font-weight: normal; }
+body.legacy-mode #account-row b { width: auto; height: auto; min-width: 0; border: 0; background: none; color: #0c32a8; font-size: 12px; font-weight: bold; }
+body.legacy-mode #account-row[data-confirm] b { color: #b00000; }

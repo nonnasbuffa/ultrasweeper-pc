@@ -22,6 +22,7 @@
       <symbol id="icon-music-off" viewBox="0 0 24 24"><path d="M9 17.5V5.2l11-2.2v12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".45" /><circle cx="6.4" cy="17.8" r="2.7" fill="currentColor" opacity=".45" /><circle cx="17.4" cy="15.6" r="2.7" fill="currentColor" opacity=".45" /><path d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
       <symbol id="icon-players" viewBox="0 0 24 24"><circle cx="8.5" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M2.5 20c.4-3.6 2.8-5.6 6-5.6s5.6 2 6 5.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="16.8" cy="7.4" r="2.8" fill="none" stroke="currentColor" stroke-width="2" /><path d="M16.4 13.3c2.9-.3 4.8 1.6 5.2 4.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
       <symbol id="icon-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M9.3 9.4a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.3-2.7 4.1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="12" cy="17.6" r="1.3" fill="currentColor" /></symbol>
+      <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M4.5 20.5c.6-4 3.6-6.4 7.5-6.4s6.9 2.4 7.5 6.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></symbol>
       <symbol id="icon-computer" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12.5" rx="2" fill="none" stroke="currentColor" stroke-width="2.1" /><path d="M8.5 20.5h7M12 16.5v4" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" /></symbol>
       <symbol id="icon-gear" viewBox="0 0 24 24"><path d="M10.3 2.8h3.4l.5 2.6 1.9.8 2.2-1.5 2.4 2.4-1.5 2.2.8 1.9 2.6.5v3.4l-2.6.5-.8 1.9 1.5 2.2-2.4 2.4-2.2-1.5-1.9.8-.5 2.6h-3.4l-.5-2.6-1.9-.8-2.2 1.5-2.4-2.4 1.5-2.2-.8-1.9-2.6-.5v-3.4l2.6-.5.8-1.9-1.5-2.2 2.4-2.4 2.2 1.5 1.9-.8z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" /><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="2" /></symbol>
       <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.4-1.2-1.6-1.2-2.8 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><circle cx="7.5" cy="11" r="1.4" fill="currentColor" /><circle cx="10" cy="7" r="1.4" fill="currentColor" /><circle cx="15" cy="7" r="1.4" fill="currentColor" /></symbol>
@@ -218,6 +219,9 @@
         <p class="eyebrow">Preferences</p>
         <h2 id="options-title">Settings</h2>
         <div class="options-list">
+          <button id="account-row" class="legacy-toggle option-row" type="button">
+            <svg class="admin-toggle-icon"><use href="#icon-user" /></svg><span class="account-text"><strong id="account-name">Guest</strong><small id="account-status">Progress only saved on this device</small></span><b>Sign In</b>
+          </button>
           <button id="music-toggle" class="legacy-toggle option-row" type="button" aria-pressed="true">
             <svg class="admin-toggle-icon"><use href="#icon-music" /></svg><span>Music</span><b>On</b>
           </button>
@@ -233,6 +237,38 @@
             <svg class="admin-toggle-icon"><use href="#icon-palette" /></svg><span>Appearance</span><b>Open</b>
           </button>
         </div>
+      </div>
+    </section>
+
+    <section id="account-screen" class="dialog-screen hidden" aria-labelledby="account-title" role="dialog" aria-modal="true">
+      <div class="dialog-card account-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Account</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <div id="account-choice">
+          <p class="eyebrow">Welcome to UltraSweeper</p>
+          <svg class="pass-icon" aria-hidden="true"><use href="#icon-user" /></svg>
+          <h2 id="account-title">Save Your Progress</h2>
+          <p class="settings-intro">With an account, your stats and settings save automatically. Log in on any device and pick up where you left off.</p>
+          <div class="account-actions">
+            <button id="account-signup" class="primary-button" type="button">Sign Up</button>
+            <button id="account-login" class="secondary-button" type="button">Log In</button>
+            <button id="account-guest" class="text-button" type="button">Play as Guest</button>
+          </div>
+        </div>
+        <form id="account-form" class="hidden" novalidate>
+          <p id="account-form-eyebrow" class="eyebrow">New Account</p>
+          <h2 id="account-form-title">Create Account</h2>
+          <div class="form-grid">
+            <label class="wide">Username<input id="account-username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20" required /></label>
+            <label class="wide">Password<input id="account-password" type="password" autocomplete="new-password" required /></label>
+          </div>
+          <p id="account-error" class="form-error" role="alert"></p>
+          <div class="tutorial-actions">
+            <button id="account-back" class="secondary-button" type="button">Back</button>
+            <button id="account-submit" class="primary-button" type="submit">Sign Up</button>
+          </div>
+          <p class="account-switch"><span id="account-switch-text">Already have an account?</span> <button id="account-switch" class="text-button" type="button">Log In</button></p>
+        </form>
       </div>
     </section>
 
@@ -361,6 +397,7 @@
       </div>
     </section>
     <script src="music.js"></script>
+    <script src="cloud.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
