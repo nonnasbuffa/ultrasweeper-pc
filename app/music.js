@@ -21,6 +21,8 @@ window.UltraMusic = (() => {
   audio.loop = true;
   audio.volume = customVolume;
   let youtube = null;
+  // Player's volume, 0 to 1, applied on top of each source's own level.
+  let volume = 1;
 
   const frequency = midi => 440 * Math.pow(2, (midi - 69) / 12);
 
@@ -284,7 +286,7 @@ window.UltraMusic = (() => {
     if (!ensureContext()) return;
     if (context.state !== 'running') context.resume().catch(() => {});
     if (!playing) startTrack();
-    fadeMaster(masterVolume, 0.6);
+    fadeMaster(masterVolume * volume, 0.6);
     if (!schedulerId) schedulerId = window.setInterval(schedule, 60);
     schedule();
   }
@@ -364,7 +366,7 @@ window.UltraMusic = (() => {
       if (youtube.ready) return;
       youtube.ready = true;
       window.clearTimeout(youtube.timeout);
-      youtubeCommand('setVolume', [customVolume * 100]);
+      youtubeCommand('setVolume', [Math.round(customVolume * volume * 100)]);
       youtubeCommand(youtube.wanted ? 'playVideo' : 'pauseVideo');
     } else if (data.event === 'onError') {
       const code = Number(data.info);
@@ -452,6 +454,12 @@ window.UltraMusic = (() => {
         file: !audio.paused,
         youtube: youtube ? { id: youtube.id, ready: youtube.ready, wanted: youtube.wanted } : null
       };
+    },
+    setVolume(value) {
+      volume = Math.min(1, Math.max(0, value));
+      audio.volume = customVolume * volume;
+      if (youtube && youtube.ready) youtubeCommand('setVolume', [Math.round(customVolume * volume * 100)]);
+      if (context && playing && enabled) fadeMaster(masterVolume * volume, 0.08);
     },
     setEnabled(value) {
       enabled = value;

@@ -1,7 +1,7 @@
 {
   "name": "ultrasweeper",
   "productName": "UltraSweeper",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "UltraSweeper: a customizable offline minesweeper game.",
   "author": "UltraSweeper",
   "main": "electron-main.js",

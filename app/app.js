@@ -28,6 +28,8 @@ const arenaStorageKey = 'offline-minesweeper-arena-v1';
 const legacyToggle = document.querySelector('#legacy-toggle');
 const musicStorageKey = 'offline-minesweeper-music-v1';
 const musicToggle = document.querySelector('#music-toggle');
+const volumeStorageKey = 'offline-minesweeper-volume-v1';
+const volumeInput = document.querySelector('#music-volume');
 const gameMusicButton = document.querySelector('#game-music');
 const songStorageKey = 'offline-minesweeper-songs-v1';
 const songLooks = ['modern', 'legacy'];
@@ -101,6 +103,7 @@ let assets = loadAssets();
 let legacyMode = storageGet(legacyStorageKey) === 'true';
 let accentColor = storageGet(accentStorageKey) || defaultAccent;
 let musicOn = storageGet(musicStorageKey) !== 'false';
+let musicVolume = storageGet(volumeStorageKey) === null ? 100 : Number(storageGet(volumeStorageKey));
 let songInfo = loadSongInfo();
 let game = null;
 let timerId = null;
@@ -129,6 +132,7 @@ let arenaFit = Infinity;
 applyLegacyMode();
 applyAccentColor();
 loadCustomSongs();
+applyVolume();
 applyMusic();
 setUpTouchDevice();
 setUpAdminPattern();
@@ -226,6 +230,11 @@ document.querySelector('#restore-assets').addEventListener('click', () => {
 });
 legacyToggle.addEventListener('click', () => setLegacyMode(!legacyMode));
 musicToggle.addEventListener('click', () => setMusic(!musicOn));
+volumeInput.addEventListener('input', () => {
+  musicVolume = Number(volumeInput.value);
+  storageSet(volumeStorageKey, String(musicVolume));
+  applyVolume();
+});
 document.querySelector('#song-link-use').addEventListener('click', useSongLink);
 document.querySelector('#song-link').addEventListener('keydown', event => {
   if (event.key === 'Enter') useSongLink();
@@ -750,7 +759,7 @@ function openDialog(name) {
   const dialog = dialogs[name];
   dialog.classList.remove('hidden', 'closing');
   pauseTimer();
-  const focusTarget = dialog.querySelector('input, .primary-button, .upload-button');
+  const focusTarget = dialog.querySelector('input:not([type="range"]), .primary-button, .upload-button');
   if (focusTarget) window.setTimeout(() => focusTarget.focus(), 60);
 }
 
@@ -1484,6 +1493,13 @@ function applyMusic() {
   gameMusicButton.title = musicOn ? 'Music on' : 'Music off';
   [musicToggle, gameMusicButton].forEach(button => button.querySelector('use').setAttribute('href', musicOn ? '#icon-music' : '#icon-music-off'));
   window.UltraMusic.setEnabled(musicOn);
+}
+
+function applyVolume() {
+  volumeInput.value = musicVolume;
+  volumeInput.style.setProperty('--fill', `${musicVolume}%`);
+  document.querySelector('#music-volume-value').textContent = `${musicVolume}%`;
+  window.UltraMusic.setVolume(musicVolume / 100);
 }
 
 function applyAccentColor() {

@@ -46,7 +46,7 @@
         <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>UltraSweeper</span></div>
         <header class="menu-header">
           <div class="menu-header-start">
-            <span class="brand"><i></i>UltraSweeper</span>
+            <span class="brand"><img src="assets/mine.svg" alt="" />UltraSweeper</span>
           </div>
           <div class="menu-header-actions">
             <button id="admin-toggle" class="legacy-toggle admin-toggle hidden" type="button" aria-pressed="false">
@@ -221,6 +221,11 @@
           <button id="music-toggle" class="legacy-toggle option-row" type="button" aria-pressed="true">
             <svg class="admin-toggle-icon"><use href="#icon-music" /></svg><span>Music</span><b>On</b>
           </button>
+          <label class="volume-row" for="music-volume">
+            <span>Volume</span>
+            <input id="music-volume" type="range" min="0" max="100" step="5" value="100" />
+            <output id="music-volume-value" for="music-volume">100%</output>
+          </label>
           <button id="legacy-toggle" class="legacy-toggle option-row" type="button" aria-pressed="false">
             <svg class="admin-toggle-icon"><use href="#icon-computer" /></svg><span>Legacy Mode</span><b>Off</b>
           </button>

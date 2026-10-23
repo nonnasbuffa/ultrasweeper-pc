@@ -26,7 +26,7 @@ button { cursor: pointer; }
 .menu-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .menu-header-actions { display: flex; align-items: center; gap: 8px; }
 .brand { display: inline-flex; align-items: center; gap: 8px; font-family: Sora, ui-sans-serif, system-ui, sans-serif; font-size: .9rem; font-weight: 700; letter-spacing: -.02em; }
-.brand i { width: 13px; height: 13px; border: 3px solid var(--accent); border-radius: 3px; box-shadow: 5px -5px #b681ff; }
+.brand img { width: 30px; height: 30px; padding: 4px; border-radius: 9px; background: linear-gradient(135deg, #9fdcff, #b681ff); box-shadow: 0 4px 14px #b681ff40; }
 .offline-badge { border: 1px solid #3a4b61; border-radius: 100px; padding: 6px 10px; color: #c3d9eb; background: #152334; font-size: .7rem; font-weight: 720; letter-spacing: .04em; }
 .legacy-toggle { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #3a4b61; border-radius: 100px; padding: 5px 6px 5px 10px; background: #152334; color: #c3d9eb; font-size: .7rem; font-weight: 720; letter-spacing: .04em; }
 .legacy-toggle:hover { border-color: var(--accent); color: #fff; }.legacy-toggle b { border-radius: 100px; padding: 3px 7px; background: #374a62; color: var(--accent); font-size: .65rem; }
@@ -1049,8 +1049,8 @@ body.legacy-mode .song-link:focus { outline: 0; }
 body.legacy-mode .song-error { font-size: 11px; }
 body.legacy-mode .song-error.ok { color: #1d7a1d; }
 @media (max-width: 900px) { .menu-header-actions .offline-badge { display: none; } }
-/* Tablets: center the menu in the screen instead of leaving it at the top. */
-@media (pointer: coarse) and (min-width: 601px) {
+/* PCs and tablets: center the menu in the screen instead of leaving it at the top. */
+@media (min-width: 601px) {
   body:not(.legacy-mode) .app-shell:has(> .mode-screen:not(.hidden)) { display: flex; flex-direction: column; justify-content: center; min-height: calc(var(--screen-height) - var(--safe-top) - var(--safe-bottom)); }
   body:not(.legacy-mode) .mode-screen { width: 100%; margin-block: 0; }
 }
@@ -1323,3 +1323,25 @@ body.legacy-mode .options-list { gap: 6px; margin-top: 0; padding-top: 10px; }
 body.legacy-mode .options-list .option-row { padding: 6px 10px; border-radius: 3px; font-size: 12px; }
 body.legacy-mode .options-list .option-row .admin-toggle-icon { width: 16px; height: 16px; }
 body.legacy-mode #menu-appearance b { width: auto; height: auto; min-width: 0; border: 0; background: none; color: #0c32a8; font-size: 12px; font-weight: bold; }
+
+/* Legacy: the menu window sits in the middle of the desktop, above the taskbar. */
+@media (min-width: 601px) {
+  body.legacy-mode .app-shell:has(> .mode-screen:not(.hidden)) { display: flex; flex-direction: column; justify-content: center; min-height: calc(var(--screen-height) - 30px - var(--safe-top) - var(--safe-bottom)); }
+  body.legacy-mode .mode-screen { width: 100%; margin-block: 0; }
+}
+
+/* Legacy Settings rows: keep the XP checkbox square. */
+body.legacy-mode .options-list .option-row b { min-width: 0; width: 15px; height: 15px; flex: none; }
+
+/* Music volume slider in Settings */
+.volume-row { display: flex; align-items: center; gap: 12px; margin-top: -4px; padding: 6px 16px 8px 48px; color: #c3d9eb; font-size: .9rem; font-weight: 650; }
+.volume-row input { flex: 1; width: auto; height: 6px; padding: 0; border: 0; border-radius: 99px; outline: none; background: linear-gradient(90deg, var(--accent) var(--fill, 100%), #2f3c4f var(--fill, 100%)); appearance: none; -webkit-appearance: none; cursor: pointer; }
+.volume-row input::-webkit-slider-thumb { width: 18px; height: 18px; border: 2px solid #0f141c; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px #0007; -webkit-appearance: none; appearance: none; }
+.volume-row input::-moz-range-thumb { width: 16px; height: 16px; border: 2px solid #0f141c; border-radius: 50%; background: #fff; }
+.volume-row output { min-width: 42px; color: #9cabbe; font-size: .82rem; text-align: right; font-variant-numeric: tabular-nums; }
+body.legacy-mode .volume-row { margin-top: -2px; padding: 2px 10px 4px 36px; color: #000; font: 12px Tahoma, sans-serif; }
+body.legacy-mode .volume-row input { height: 4px; border: 1px solid #9a9a8e; border-radius: 0; background: #fff; }
+body.legacy-mode .volume-row input::-webkit-slider-thumb { width: 11px; height: 20px; border: 1px solid #1c5180; border-radius: 2px; background: linear-gradient(180deg, #fff, #d8e4f8); box-shadow: none; }
+body.legacy-mode .volume-row output { color: #333; font-size: 11px; }
+.volume-row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+body.legacy-mode .volume-row input { padding: 0; }
