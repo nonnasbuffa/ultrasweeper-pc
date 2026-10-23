@@ -63,15 +63,15 @@ const tutorialStorageKey = 'offline-minesweeper-tutorial-v1';
 // Tutorial pictures: one 5 × 5 board shown at different moments. o = open, c = closed, f = flagged.
 const tutorialMines = [3, 10, 17, 18];
 const tutorialSteps = [
-  { title: 'The goal', board: 'ooofo ooooo foooo ooffo ooooo',
+  { title: 'The Goal', board: 'ooofo ooooo foooo ooffo ooooo',
     text: () => "Open every tile that isn't hiding a mine. Open them all and you win, but open a mine and it's game over." },
-  { title: 'Open a tile', board: 'oooccoooccccccccccccccccc', mark: [0],
+  { title: 'Open a Tile', board: 'oooccoooccccccccccccccccc', mark: [0],
     text: tap => `${tap} a tile to open it. Your first one is always safe. Tiles with no mines around them open their neighbors for you, so one ${tap.toLowerCase()} can clear a whole area.` },
-  { title: 'Read the numbers', board: 'oooco ooooo ccccc ccccc ccccc', mark: [2], target: [3],
+  { title: 'Read the Numbers', board: 'oooco ooooo ccccc ccccc ccccc', mark: [2], target: [3],
     text: () => 'A number tells you how many mines touch that tile, diagonals included. The highlighted 1 has only one closed tile next to it, so that tile must be a mine.' },
-  { title: 'Flag the mines', board: 'ooofo ooooo ccccc ccccc ccccc', mark: [3],
+  { title: 'Flag the Mines', board: 'ooofo ooooo ccccc ccccc ccccc', mark: [3],
     text: (tap, touch) => `${touch ? 'Hold a tile to put a flag on it (your phone buzzes), and hold it again to take the flag off.' : 'Right-click a tile (or press F) to put a flag on it, and do it again to take the flag off.'} Flags mark mines, so you can't open them by accident.` },
-  { title: 'Clear around a number', board: 'ooofo ooooo fcccc ccccc ccccc', mark: [5], target: [11],
+  { title: 'Clear Around a Number', board: 'ooofo ooooo fcccc ccccc ccccc', mark: [5], target: [11],
     text: tap => `When a number already has all its mines flagged, ${tap.toLowerCase()} it to open all its other neighbors at once. This 1 has its flag, so the closed tile next to it is safe.` },
   { title: "You're ready!", board: 'ooofo ooooo foooo ooffo ooooo',
     text: () => 'In a game, the left counter shows how many mines are left to flag, the right one is your time, and the face starts a new game. Good luck!' }
