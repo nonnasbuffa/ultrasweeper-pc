@@ -97,8 +97,6 @@ let profileView = null;
 let platinumTimer = null;
 // This username gets the gold aura on its profile.
 const goldAuraPlayers = ['aski650'];
-// The game's creator: always an admin, no password needed (the server rules know this name too).
-const creatorUsername = 'aski650';
 // null = not asked yet, { guest: true }, or a signed-in player { username, uid, refreshToken }.
 let account = loadAccount();
 let accountView = 'choice';
@@ -1507,8 +1505,7 @@ async function pullProgress(justLoggedIn = false) {
   setSyncState('saving');
   try {
     const cloud = await window.UltraCloud.load(session);
-    session.admin = isCreator(session) || await window.UltraCloud.isAdmin(session);
-    if (isCreator(session)) unlockAdminTools();
+    session.admin = await window.UltraCloud.isAdmin(session);
     if (account !== session) return;
     if (cloud && cloud.username) session.username = cloud.username;
     saveAccount();
@@ -1662,12 +1659,7 @@ function publicStats() {
   };
 }
 
-function isCreator(session) {
-  return Boolean(session && session.username && session.username.toLowerCase() === creatorUsername);
-}
-
 async function publishMyProfile(session) {
-  if (isCreator(session)) session.admin = true;
   const mine = publicStats();
   const card = { username: session.username, picture: profile.picture, bio: profile.bio, won: mine.won, bestStreak: mine.bestStreak, times: JSON.stringify(mine.times), admin: Boolean(session.admin) };
   try {
@@ -1834,10 +1826,6 @@ async function submitAccount(event) {
     account = { ...session, username };
     saveAccount();
     // A new account starts with whatever was played on this device; logging in brings the account's progress here.
-    if (isCreator(account)) {
-      account.admin = true;
-      unlockAdminTools();
-    }
     if (signup) await pushProgress();
     else await pullProgress(true);
     if (openDialogName === 'account') closeDialog();
@@ -2074,17 +2062,10 @@ async function addAdminToAccount(password) {
   if (openDialogName === 'profile') renderProfile();
 }
 
-function unlockAdminTools() {
-  if (adminState.unlocked) return;
-  adminState.unlocked = true;
-  storageSet(adminStorageKey, 'unlocked');
-  updateAdminUi();
-}
-
 async function removeAdminFromAccount() {
   const session = account;
-  // The creator's admin is permanent; locking only hides the tools on this device.
-  if (isCreator(session)) return;
+  session.admin = false;
+  saveAccount();
   try {
     await window.UltraCloud.removeAdmin(session);
     session.admin = false;

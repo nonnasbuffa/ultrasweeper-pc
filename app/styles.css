@@ -1406,8 +1406,8 @@ body.legacy-mode .gold-name { background: linear-gradient(90deg, #b8860b, #e0a80
 .platinum-toast { position: relative; padding: 2px; overflow: hidden; border-radius: 18px; box-shadow: 0 14px 40px #000a, 0 0 0 1px #ffffff14; }
 .platinum-toast::before { position: absolute; inset: -60%; background: conic-gradient(#ffffff, #8eaccc, #ffffff, #5d7fa8, #e9f3ff, #9fb9d6, #ffffff); content: ''; animation: plat-spin 2.6s linear infinite; }
 .platinum-inner { position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 20px 12px 12px; overflow: hidden; border-radius: 16px; background: linear-gradient(135deg, #2b3448f7, #141922f7 70%); backdrop-filter: blur(12px); }
-.platinum-art { display: grid; flex: none; place-items: center; width: 64px; height: 64px; border-radius: 12px; background: linear-gradient(135deg, #9fdcff, #b681ff); box-shadow: inset 0 0 0 1px #ffffff55, 0 4px 14px #0007; }
-.platinum-art img { width: 40px; height: 40px; filter: drop-shadow(0 2px 4px #0006); }
+.platinum-art { display: grid; flex: none; place-items: center; width: 64px; height: 64px; border-radius: 12px; background: radial-gradient(circle at 50% 40%, #3b4f73, #141a26 75%); box-shadow: inset 0 0 0 1px #bcd6ff55, 0 4px 14px #0007; }
+.platinum-art-trophy { width: 50px; height: 50px; filter: drop-shadow(0 0 8px #bcd6ff99) drop-shadow(0 3px 4px #0008); }
 .platinum-text { min-width: 0; }
 .platinum-text p { margin: 0; }
 .platinum-kicker { color: #aab6c8; font-size: .8rem; font-weight: 600; }
