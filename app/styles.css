@@ -1302,3 +1302,9 @@ body.legacy-mode .preset-button:nth-child(2) b { color: #a85a00; }
 body.legacy-mode .preset-button:nth-child(3) b { color: #b00000; }
 body.legacy-mode .preset-button span, body.legacy-mode .preset-button small { color: #333; font-size: 11px; }
 body.legacy-mode .preset-row + .form-grid { margin-top: 0; }
+
+/* Keyboard: a clear ring on whatever the arrow keys landed on. */
+.mode-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.menu-header button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+body.legacy-mode .tile:focus-visible { outline: 2px dotted #000; outline-offset: -5px; }
+body.legacy-mode .menu-header button:focus-visible { outline: 1px dotted #000; outline-offset: -4px; }

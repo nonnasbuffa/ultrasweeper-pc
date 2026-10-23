@@ -108,6 +108,8 @@ let openDialogName = null;
 let dialogReturnFocus = null;
 let tileButtons = [];
 let longPress = null;
+// Tile under the mouse, so F flags what you're pointing at rather than the last tile you clicked.
+let hoveredTile = null;
 let arena = loadArena();
 let arenaGesture = null;
 // Admin access is remembered on this device until "Lock admin" is pressed in the admin panel.
@@ -314,22 +316,11 @@ boardElement.addEventListener('auxclick', event => {
   const index = tileIndex(event.target);
   if (index !== null && event.button === 1) chord(index);
 });
-boardElement.addEventListener('keydown', event => {
-  const index = tileIndex(event.target);
-  if (index === null) return;
-  if (event.key === 'f' || event.key === 'F') {
-    event.preventDefault();
-    toggleFlag(index);
-    return;
-  }
-  const moves = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-  const move = moves[event.key];
-  if (!move) return;
-  event.preventDefault();
-  const x = Math.min(game.width - 1, Math.max(0, (index % game.width) + move[0]));
-  const y = Math.min(game.height - 1, Math.max(0, Math.floor(index / game.width) + move[1]));
-  tileButtons[y * game.width + x].focus();
+boardElement.addEventListener('pointermove', event => {
+  if (event.pointerType === 'mouse') hoveredTile = tileIndex(event.target);
 });
+boardElement.addEventListener('pointerleave', () => { hoveredTile = null; });
+document.addEventListener('keydown', handleArrowKeys);
 boardElement.addEventListener('pointerdown', event => {
   if (event.pointerType !== 'touch') {
     longPress = null;
@@ -434,6 +425,72 @@ function showTutorialStep(index) {
     if (step.target && step.target.includes(index)) tile.classList.add('tutorial-target');
     return tile;
   }));
+}
+
+const arrowMoves = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+
+function handleArrowKeys(event) {
+  if (openDialogName || event.ctrlKey || event.altKey || event.metaKey) return;
+  if (event.target instanceof Element && event.target.closest('input, textarea, select, #admin-panel')) return;
+  const move = arrowMoves[event.key];
+  const flagKey = event.key === 'f' || event.key === 'F';
+  if (currentScreen === 'game' && game) {
+    const focused = tileIndex(document.activeElement);
+    if (flagKey) {
+      const index = hoveredTile !== null ? hoveredTile : focused;
+      if (index === null) return;
+      event.preventDefault();
+      toggleFlag(index);
+      return;
+    }
+    if (!move) return;
+    event.preventDefault();
+    // Start from the focused tile, else the one under the mouse, else the middle of the board.
+    let index = focused !== null ? focused : hoveredTile;
+    if (index === null) {
+      index = Math.floor(game.height / 2) * game.width + Math.floor(game.width / 2);
+    } else {
+      const x = Math.min(game.width - 1, Math.max(0, (index % game.width) + move[0]));
+      const y = Math.min(game.height - 1, Math.max(0, Math.floor(index / game.width) + move[1]));
+      index = y * game.width + x;
+    }
+    // Keyboard takes over from the mouse until it moves again.
+    hoveredTile = null;
+    tileButtons[index].focus();
+  } else if (currentScreen === 'mode' && move) {
+    event.preventDefault();
+    moveMenuFocus(move);
+  }
+}
+
+// Main menu: arrows jump to the nearest button in that direction, following the layout on screen.
+function moveMenuFocus([dx, dy]) {
+  const items = [...screens.mode.querySelectorAll('.menu-header button, .mode-card')].filter(item => item.offsetParent);
+  const current = items.includes(document.activeElement) ? document.activeElement : null;
+  if (!current) {
+    document.querySelector('#normal-game').focus();
+    return;
+  }
+  const from = current.getBoundingClientRect();
+  const fromX = from.left + from.width / 2;
+  const fromY = from.top + from.height / 2;
+  let best = null;
+  let bestScore = Infinity;
+  items.forEach(item => {
+    if (item === current) return;
+    const rect = item.getBoundingClientRect();
+    const along = dx ? (rect.left + rect.width / 2 - fromX) * dx : (rect.top + rect.height / 2 - fromY) * dy;
+    if (along <= 1) return;
+    // Left and right stay on the same row.
+    if (dx && (rect.bottom <= from.top || rect.top >= from.bottom)) return;
+    const across = dx ? Math.abs(rect.top + rect.height / 2 - fromY) : Math.abs(rect.left + rect.width / 2 - fromX);
+    const score = along + across * 2;
+    if (score < bestScore) {
+      bestScore = score;
+      best = item;
+    }
+  });
+  if (best) best.focus();
 }
 
 function backToMenu() {
