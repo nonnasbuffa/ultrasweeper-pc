@@ -92,6 +92,11 @@ const accountButton = document.querySelector('#profile-account');
 const bioInput = document.querySelector('#profile-bio');
 // Profile picture and bio; they travel with the account like the stats do.
 let profile = loadProfile();
+// Someone else's profile being looked at, or null for your own.
+let profileView = null;
+let platinumTimer = null;
+// This username gets the gold aura on its profile.
+const goldAuraPlayers = ['aski650'];
 // null = not asked yet, { guest: true }, or a signed-in player { username, uid, refreshToken }.
 let account = loadAccount();
 let accountView = 'choice';
@@ -228,6 +233,13 @@ document.querySelector('#menu-appearance').addEventListener('click', openAppeara
 document.querySelector('#menu-help').addEventListener('click', () => openTutorial(false));
 document.querySelector('#menu-options').addEventListener('click', () => openDialog('options'));
 document.querySelector('#menu-profile').addEventListener('click', openProfile);
+document.querySelector('#profile-search').addEventListener('submit', findPlayer);
+document.querySelector('#profile-back').addEventListener('click', () => {
+  profileView = null;
+  renderProfile();
+});
+document.querySelector('#profile-add-admin').addEventListener('click', openAdminDialog);
+document.querySelector('#platinum').addEventListener('click', hidePlatinum);
 accountButton.addEventListener('click', clickAccountButton);
 document.querySelector('#profile-picture').addEventListener('click', () => document.querySelector('#profile-file').click());
 document.querySelector('#profile-file').addEventListener('change', event => {
@@ -254,6 +266,7 @@ document.querySelector('#account-form').addEventListener('submit', submitAccount
 window.addEventListener('online', () => {
   if (signedIn() && loadSyncInfo().dirty) pushProgress();
 });
+window.addEventListener('pagehide', abandonGame);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden' && syncTimer) pushProgress();
 });
@@ -314,9 +327,7 @@ document.querySelector('#reset-accent').addEventListener('click', () => {
 adminToggle.addEventListener('click', () => {
   // Once unlocked this is just a status badge; locking again is done from the in-game admin panel.
   if (adminState.unlocked) return;
-  document.querySelector('#admin-password').value = '';
-  document.querySelector('#admin-error').textContent = '';
-  openDialog('admin');
+  openAdminDialog();
 });
 document.querySelector('#admin-form').addEventListener('submit', unlockAdmin);
 document.querySelector('#menu-stats').addEventListener('click', () => openStats());
@@ -468,7 +479,7 @@ function showTutorialStep(index) {
   document.querySelector('#tutorial-count').textContent = `Step ${tutorialStep + 1} of ${tutorialSteps.length}`;
   document.querySelector('#tutorial-step-title').textContent = step.title;
   document.querySelector('#tutorial-text').textContent = step.text(touch ? 'Tap' : 'Click', touch);
-  document.querySelector('#tutorial-back').classList.toggle('invisible', tutorialStep === 0);
+  document.querySelector('#tutorial-back').classList.toggle('hidden', tutorialStep === 0);
   document.querySelector('#tutorial-next').textContent = last ? 'Play a practice game' : 'Next';
   document.querySelector('#tutorial-dots').replaceChildren(...tutorialSteps.map((_, dot) => {
     const span = document.createElement('span');
@@ -561,6 +572,7 @@ function moveMenuFocus([dx, dy]) {
 }
 
 function backToMenu() {
+  abandonGame();
   closeDialog();
   toggleAdminPanel(false);
   stopTimer();
@@ -974,7 +986,17 @@ function beginPlay() {
   game.pausedMs = 0;
 }
 
+// A match counts as soon as the first tile is opened (that's when the timer starts), so leaving
+// one that's under way is a loss. Leaving before the first tile doesn't count at all.
+function abandonGame() {
+  if (!game || !game.started || game.ended || game.duel) return;
+  game.ended = true;
+  stopTimer();
+  recordResult(false);
+}
+
 function startGame(width, height, mines, duel = null) {
+  abandonGame();
   stopTimer();
   game = {
     duel,
@@ -1422,7 +1444,7 @@ function saveAccount() {
     storageRemove(accountStorageKey);
     return;
   }
-  const saved = account.guest ? { guest: true } : { username: account.username, uid: account.uid, refreshToken: account.refreshToken };
+  const saved = account.guest ? { guest: true } : { username: account.username, uid: account.uid, refreshToken: account.refreshToken, admin: Boolean(account.admin) };
   storageSet(accountStorageKey, JSON.stringify(saved));
 }
 
@@ -1470,6 +1492,7 @@ async function pushProgress() {
   setSyncState('saving');
   try {
     await window.UltraCloud.save(session, { username: session.username, data: JSON.stringify(collectProgress()), updatedAt });
+    await publishMyProfile(session);
     if (account !== session) return;
     saveAccount();
     // Only mark it saved if nothing else changed while it was uploading.
@@ -1487,6 +1510,7 @@ async function pullProgress(justLoggedIn = false) {
   setSyncState('saving');
   try {
     const cloud = await window.UltraCloud.load(session);
+    session.admin = await window.UltraCloud.isAdmin(session);
     if (account !== session) return;
     if (cloud && cloud.username) session.username = cloud.username;
     saveAccount();
@@ -1496,6 +1520,8 @@ async function pullProgress(justLoggedIn = false) {
       return;
     }
     if (justLoggedIn || cloud.updatedAt !== sync.updatedAt) applyProgress(cloud);
+    // Keeps the public profile (and its admin badge) up to date, including for accounts made before profiles existed.
+    await publishMyProfile(session);
     setSyncState('saved');
   } catch (error) {
     cloudFailed(error, session);
@@ -1572,24 +1598,17 @@ function setSyncState(state) {
 }
 
 function updateAccountUi() {
-  const status = document.querySelector('#profile-status');
-  const name = signedIn() ? account.username : 'Guest';
-  document.querySelector('#profile-name').textContent = name;
-  document.querySelector('#profile-initial').textContent = name[0].toUpperCase();
   accountButton.classList.toggle('primary-button', !signedIn());
   accountButton.classList.toggle('secondary-button', signedIn());
-  if (signedIn()) {
-    status.textContent = {
-      saving: 'Saving…',
-      saved: 'Progress saved to your account',
-      offline: "Offline. Saves when you're back online",
-      error: "Couldn't save. Trying again soon"
-    }[syncState];
-    accountButton.textContent = accountButton.dataset.confirm ? 'Sure? Log out' : 'Log Out';
-  } else {
-    status.textContent = 'Progress only saved on this device';
-    accountButton.textContent = 'Sign Up or Log In';
-  }
+  if (signedIn()) accountButton.textContent = accountButton.dataset.confirm ? 'Sure? Log out' : 'Log Out';
+  else accountButton.textContent = 'Sign Up or Log In';
+  if (profileView) return;
+  document.querySelector('#profile-status').textContent = signedIn() ? {
+    saving: 'Saving…',
+    saved: 'Progress saved to your account',
+    offline: "Offline. Saves when you're back online",
+    error: "Couldn't save. Trying again soon"
+  }[syncState] : 'Progress only saved on this device';
 }
 
 async function clickAccountButton() {
@@ -1624,41 +1643,164 @@ function saveProfile() {
 
 function openProfile() {
   delete accountButton.dataset.confirm;
+  profileView = null;
+  document.querySelector('#profile-search-name').value = '';
+  document.querySelector('#profile-search-error').textContent = '';
   renderProfile();
   openDialog('profile');
 }
 
+// What everyone else sees of you: wins, best streak and best times, never played games or win rate.
+function publicStats() {
+  const boards = Object.values(stats.boards);
+  const times = {};
+  Object.entries(namedBoards).forEach(([key, label]) => {
+    const entry = stats.boards[key];
+    if (entry && entry.times.length) times[label] = entry.times[0].time;
+  });
+  return {
+    won: boards.reduce((sum, entry) => sum + entry.won, 0),
+    played: boards.reduce((sum, entry) => sum + entry.played, 0),
+    bestStreak: boards.reduce((best, entry) => Math.max(best, entry.bestStreak), 0),
+    times
+  };
+}
+
+async function publishMyProfile(session) {
+  const mine = publicStats();
+  const card = { username: session.username, picture: profile.picture, bio: profile.bio, won: mine.won, bestStreak: mine.bestStreak, times: JSON.stringify(mine.times), admin: Boolean(session.admin) };
+  try {
+    await window.UltraCloud.publishProfile(session, card);
+  } catch (error) {
+    if (error.kind !== 'denied') throw error;
+    // The admin badge didn't match the server (it changed on another device): check it and try once more.
+    session.admin = await window.UltraCloud.isAdmin(session);
+    await window.UltraCloud.publishProfile(session, { ...card, admin: session.admin });
+  }
+}
+
+async function findPlayer(event) {
+  event.preventDefault();
+  const input = document.querySelector('#profile-search-name');
+  const error = document.querySelector('#profile-search-error');
+  const button = document.querySelector('#profile-search-button');
+  const name = input.value.trim();
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(name)) {
+    error.textContent = 'Usernames are 3 to 20 letters, numbers or _.';
+    return;
+  }
+  error.textContent = '';
+  button.disabled = true;
+  button.textContent = 'Searching…';
+  try {
+    const found = await window.UltraCloud.getProfile(name);
+    if (!found) {
+      error.textContent = `No player called "${name}".`;
+      return;
+    }
+    let times = {};
+    try {
+      times = JSON.parse(found.times) || {};
+    } catch {
+      // No times to show.
+    }
+    if (signedIn() && found.uid === account.uid) {
+      profileView = null;
+    } else {
+      profileView = { ...found, times, played: null };
+      // Admins can also see what everyone else keeps private.
+      if (signedIn() && account.admin) {
+        try {
+          const save = await window.UltraCloud.loadSaveOf(account, found.uid);
+          const theirStats = JSON.parse(JSON.parse(save.data)[statsStorageKey]);
+          profileView.played = Object.values(theirStats.boards).reduce((sum, entry) => sum + entry.played, 0);
+          profileView.won = Object.values(theirStats.boards).reduce((sum, entry) => sum + entry.won, 0);
+        } catch {
+          // Their save couldn't be read; show the public part only.
+        }
+      }
+    }
+    input.value = '';
+    renderProfile();
+  } catch (problem) {
+    error.textContent = problem.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Search';
+  }
+}
+
 function renderProfile() {
   updateAccountUi();
+  const viewing = Boolean(profileView);
+  const mine = publicStats();
+  const shown = viewing ? profileView : {
+    username: signedIn() ? account.username : 'Guest',
+    picture: profile.picture,
+    bio: profile.bio,
+    admin: signedIn() && Boolean(account.admin),
+    won: mine.won,
+    played: mine.played,
+    bestStreak: mine.bestStreak,
+    times: mine.times
+  };
+  const pictureButton = document.querySelector('#profile-picture');
   const image = document.querySelector('#profile-image');
-  image.classList.toggle('hidden', !profile.picture);
-  if (profile.picture) image.src = profile.picture;
+  const gold = goldAuraPlayers.includes(shown.username.toLowerCase());
+  document.querySelector('#profile-eyebrow').textContent = viewing ? 'Player Profile' : 'Your Profile';
+  document.querySelector('#profile-name').textContent = shown.username;
+  document.querySelector('#profile-name').classList.toggle('gold-name', gold);
+  pictureButton.classList.toggle('aura-gold', gold);
+  pictureButton.classList.toggle('readonly', viewing);
+  pictureButton.disabled = viewing;
+  document.querySelector('#profile-initial').textContent = shown.username[0].toUpperCase();
+  document.querySelector('#profile-admin').classList.toggle('hidden', !shown.admin);
+  if (viewing) document.querySelector('#profile-status').textContent = shown.admin ? 'UltraSweeper admin' : 'UltraSweeper player';
+  image.classList.toggle('hidden', !shown.picture);
+  if (shown.picture) image.src = shown.picture;
   else image.removeAttribute('src');
-  document.querySelector('#profile-initial').classList.toggle('hidden', Boolean(profile.picture));
-  document.querySelector('#profile-remove-picture').classList.toggle('hidden', !profile.picture);
+  document.querySelector('#profile-initial').classList.toggle('hidden', Boolean(shown.picture));
   document.querySelector('#profile-picture-error').textContent = '';
-  bioInput.value = profile.bio;
-  document.querySelector('#profile-bio-count').textContent = `${profile.bio.length}/150`;
 
-  const boards = Object.values(stats.boards);
-  const won = boards.reduce((sum, entry) => sum + entry.won, 0);
-  const played = boards.reduce((sum, entry) => sum + entry.played, 0);
-  document.querySelector('#profile-won').textContent = won;
-  document.querySelector('#profile-played').textContent = played;
-  document.querySelector('#profile-rate').textContent = played ? `${Math.round(won / played * 100)}%` : '0%';
-  document.querySelector('#profile-streak').textContent = boards.reduce((best, entry) => Math.max(best, entry.bestStreak), 0);
-  // Best time on each of the standard boards (custom sizes aren't comparable, so they stay in Stats).
-  document.querySelector('#profile-times').replaceChildren(...Object.entries(namedBoards).map(([key, label]) => {
-    const entry = stats.boards[key];
+  document.querySelector('#profile-bio-edit').classList.toggle('hidden', viewing);
+  const bioText = document.querySelector('#profile-bio-text');
+  bioText.classList.toggle('hidden', !viewing);
+  bioText.classList.toggle('empty', !shown.bio);
+  bioText.textContent = shown.bio || 'No bio yet.';
+  if (!viewing) {
+    bioInput.value = profile.bio;
+    document.querySelector('#profile-bio-count').textContent = `${profile.bio.length}/150`;
+  }
+
+  // Played and win rate: yours, or anyone's if you're an admin.
+  const showPrivate = shown.played !== null && shown.played !== undefined;
+  document.querySelector('#profile-won').textContent = shown.won;
+  document.querySelector('#profile-streak').textContent = shown.bestStreak;
+  document.querySelectorAll('.profile-stats .private').forEach(tile => tile.classList.toggle('hidden', !showPrivate));
+  if (showPrivate) {
+    document.querySelector('#profile-played').textContent = shown.played;
+    document.querySelector('#profile-rate').textContent = shown.played ? `${Math.round(shown.won / shown.played * 100)}%` : '0%';
+  }
+  document.querySelector('#profile-private-note span').textContent = !viewing
+    ? 'Only you (and admins) can see Played and Win Rate.'
+    : showPrivate ? 'Admin view: Played and Win Rate are private to this player.' : 'Played and Win Rate are private.';
+
+  document.querySelector('#profile-times').replaceChildren(...Object.values(namedBoards).map(label => {
+    const time = shown.times[label];
     const item = document.createElement('div');
-    item.classList.toggle('empty', !(entry && entry.times.length));
+    item.classList.toggle('empty', time === undefined);
     const name = document.createElement('span');
     name.textContent = label;
-    const time = document.createElement('b');
-    time.textContent = entry && entry.times.length ? formatTime(entry.times[0].time) : '—';
-    item.append(name, time);
+    const value = document.createElement('b');
+    value.textContent = time === undefined ? '—' : formatTime(time);
+    item.append(name, value);
     return item;
   }));
+
+  document.querySelector('#profile-back').classList.toggle('hidden', !viewing);
+  accountButton.classList.toggle('hidden', viewing);
+  document.querySelector('#profile-remove-picture').classList.toggle('hidden', viewing || !profile.picture);
+  document.querySelector('#profile-add-admin').classList.toggle('hidden', viewing || !signedIn() || Boolean(account.admin) || !adminState.unlocked);
 }
 
 // Shrinks the picked image to a small square, so it's light enough to save with the account.
@@ -1958,6 +2100,82 @@ async function sha256(text) {
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
+function openAdminDialog() {
+  document.querySelector('#admin-password').value = '';
+  document.querySelector('#admin-error').textContent = '';
+  openDialog('admin');
+}
+
+async function addAdminToAccount(password) {
+  const session = account;
+  try {
+    await window.UltraCloud.addAdmin(session, password);
+    session.admin = true;
+    saveAccount();
+    await publishMyProfile(session);
+  } catch (error) {
+    cloudFailed(error, session);
+  }
+  if (openDialogName === 'profile') renderProfile();
+}
+
+async function removeAdminFromAccount() {
+  const session = account;
+  try {
+    await window.UltraCloud.removeAdmin(session);
+    session.admin = false;
+    saveAccount();
+    await publishMyProfile(session);
+  } catch (error) {
+    cloudFailed(error, session);
+  }
+}
+
+// The big moment: a platinum trophy, like finishing every trophy in a game.
+function showPlatinum() {
+  const overlay = document.querySelector('#platinum');
+  overlay.classList.remove('hidden', 'leaving', 'playing');
+  void overlay.offsetWidth;
+  overlay.classList.add('playing');
+  playPlatinumSound();
+  window.clearTimeout(platinumTimer);
+  platinumTimer = window.setTimeout(hidePlatinum, 4600);
+}
+
+function hidePlatinum() {
+  const overlay = document.querySelector('#platinum');
+  if (overlay.classList.contains('hidden')) return;
+  window.clearTimeout(platinumTimer);
+  overlay.classList.add('leaving');
+  platinumTimer = window.setTimeout(() => overlay.classList.add('hidden'), 400);
+}
+
+function playPlatinumSound() {
+  if (!musicOn || !musicVolume) return;
+  try {
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const level = 0.16 * (musicVolume / 100);
+    // A rising bell arpeggio, each note with a soft overtone.
+    [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((frequency, index) => {
+      const at = context.currentTime + 0.3 + index * 0.11;
+      [[1, 1], [2.01, 0.22]].forEach(([multiple, share]) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.frequency.value = frequency * multiple;
+        gain.gain.setValueAtTime(0.0001, at);
+        gain.gain.exponentialRampToValueAtTime(level * share, at + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, at + 1.8);
+        oscillator.connect(gain).connect(context.destination);
+        oscillator.start(at);
+        oscillator.stop(at + 1.9);
+      });
+    });
+    window.setTimeout(() => context.close(), 3500);
+  } catch {
+    // No sound on this device; the animation still plays.
+  }
+}
+
 async function unlockAdmin(event) {
   event.preventDefault();
   const input = document.querySelector('#admin-password');
@@ -1978,15 +2196,19 @@ async function unlockAdmin(event) {
     card.classList.add('denied');
     return;
   }
+  const password = input.value;
   input.value = '';
   error.textContent = '';
   adminState.unlocked = true;
   storageSet(adminStorageKey, 'unlocked');
   closeDialog();
   updateAdminUi();
+  showPlatinum();
+  if (signedIn() && !account.admin) addAdminToAccount(password);
 }
 
 function lockAdmin() {
+  if (signedIn() && account.admin) removeAdminFromAccount();
   adminState.unlocked = false;
   storageRemove(adminStorageKey);
   adminState.xray = false;
@@ -2273,47 +2495,64 @@ function openStats() {
 function renderStats(key = statsBoard) {
   statsBoard = key;
   const clear = document.querySelector('#clear-stats');
-  clear.textContent = "Clear this board's stats";
+  clear.textContent = 'Clear this board';
   delete clear.dataset.confirm;
+  const tile = (label, value) => {
+    const item = document.createElement('div');
+    const number = document.createElement('b');
+    number.textContent = value;
+    const name = document.createElement('span');
+    name.textContent = label;
+    item.append(number, name);
+    return item;
+  };
 
+  // Every board together.
+  const all = publicStats();
+  document.querySelector('#stats-overview').replaceChildren(
+    tile('Played', all.played),
+    tile('Won', all.won),
+    tile('Win Rate', all.played ? `${Math.round(all.won / all.played * 100)}%` : '—'),
+    tile('Best Streak', all.bestStreak)
+  );
+
+  // Board picker: the standard sizes first, then custom ones.
   const keys = Object.keys(stats.boards);
   ['9x9x10', key].forEach(required => {
     if (!keys.includes(required)) keys.push(required);
   });
-  const order = ['9x9x10', '16x16x40', '30x16x99'];
+  const order = Object.keys(namedBoards);
   keys.sort((a, b) => {
     const ia = order.indexOf(a), ib = order.indexOf(b);
     if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     return a.localeCompare(b, undefined, { numeric: true });
   });
-  const tabs = document.querySelector('#stats-boards');
-  tabs.replaceChildren(...keys.map(boardId => {
+  document.querySelector('#stats-boards').replaceChildren(...keys.map(boardId => {
     const tab = document.createElement('button');
     tab.type = 'button';
     tab.className = 'stats-tab';
     tab.dataset.board = boardId;
     tab.setAttribute('role', 'tab');
     tab.setAttribute('aria-selected', String(boardId === key));
-    const name = document.createElement('b');
-    name.textContent = namedBoards[boardId] || 'Custom';
-    const size = document.createElement('small');
-    size.textContent = boardLabel(boardId);
-    tab.append(name, size);
+    const [width, height, mines] = boardId.split('x');
+    tab.textContent = namedBoards[boardId] || `${width}×${height} · ${mines}`;
     return tab;
   }));
+  const selected = document.querySelector('#stats-boards [aria-selected="true"]');
+  if (selected) selected.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
   const entry = stats.boards[key] || { played: 0, won: 0, streak: 0, bestStreak: 0, totalTime: 0, times: [] };
-  const best = entry.times.length ? formatTime(entry.times[0].time) : '—';
+  document.querySelector('#stats-best').textContent = entry.times.length ? formatTime(entry.times[0].time) : '—';
+  document.querySelector('#stats-board-name').textContent = `${namedBoards[key] || 'Custom'} · ${boardLabel(key)}`;
   const average = entry.won ? formatTime(Math.round(entry.totalTime / entry.won * 100) / 100) : '—';
-  const items = [
+  document.querySelector('#stats-summary').replaceChildren(...[
     ['Played', entry.played],
     ['Won', entry.won],
-    ['Win rate', entry.played ? `${Math.round(entry.won / entry.played * 100)}%` : '—'],
-    ['Best time', best],
+    ['Win Rate', entry.played ? `${Math.round(entry.won / entry.played * 100)}%` : '—'],
     ['Average', average],
-    ['Streak', `${entry.streak} (best ${entry.bestStreak})`]
-  ];
-  document.querySelector('#stats-summary').replaceChildren(...items.map(([label, value]) => {
+    ['Streak', entry.streak],
+    ['Best Streak', entry.bestStreak]
+  ].map(([label, value]) => {
     const item = document.createElement('div');
     item.className = 'stats-item';
     const name = document.createElement('span');
@@ -2324,17 +2563,17 @@ function renderStats(key = statsBoard) {
     return item;
   }));
 
-  const list = document.querySelector('#stats-times');
-  list.replaceChildren(...entry.times.map((record, index) => {
+  const medals = ['gold', 'silver', 'bronze'];
+  document.querySelector('#stats-times').replaceChildren(...entry.times.map((record, index) => {
     const row = document.createElement('li');
-    row.className = index === 0 ? 'stats-row first' : 'stats-row';
+    row.className = `stats-row ${medals[index] || ''}`;
     const place = document.createElement('span');
     place.className = 'stats-rank';
-    place.textContent = `#${index + 1}`;
+    place.textContent = index + 1;
     const time = document.createElement('strong');
     time.textContent = formatTime(record.time);
     const date = document.createElement('small');
-    date.textContent = new Date(record.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+    date.textContent = new Date(record.date).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
     row.append(place, time, date);
     return row;
   }));
@@ -2346,7 +2585,7 @@ function clearBoardStats() {
   const button = document.querySelector('#clear-stats');
   if (!button.dataset.confirm) {
     button.dataset.confirm = 'true';
-    button.textContent = 'Click again to clear';
+    button.textContent = 'Sure? Click again';
     return;
   }
   delete stats.boards[statsBoard];
