@@ -11,7 +11,8 @@ const dialogs = {
   pass: document.querySelector('#pass-screen'),
   tutorial: document.querySelector('#tutorial-screen'),
   options: document.querySelector('#options-screen'),
-  account: document.querySelector('#account-screen')
+  account: document.querySelector('#account-screen'),
+  profile: document.querySelector('#profile-screen')
 };
 
 const boardElement = document.querySelector('#board');
@@ -85,8 +86,12 @@ let tutorialStep = 0;
 // (Custom pictures and songs stay on each device: they're far too big to send around.)
 const accountStorageKey = 'offline-minesweeper-account-v1';
 const syncStorageKey = 'offline-minesweeper-sync-v1';
-const syncedKeys = [statsStorageKey, legacyStorageKey, accentStorageKey, musicStorageKey, volumeStorageKey, tutorialStorageKey];
-const accountRow = document.querySelector('#account-row');
+const profileStorageKey = 'offline-minesweeper-profile-v1';
+const syncedKeys = [profileStorageKey, statsStorageKey, legacyStorageKey, accentStorageKey, musicStorageKey, volumeStorageKey, tutorialStorageKey];
+const accountButton = document.querySelector('#profile-account');
+const bioInput = document.querySelector('#profile-bio');
+// Profile picture and bio; they travel with the account like the stats do.
+let profile = loadProfile();
 // null = not asked yet, { guest: true }, or a signed-in player { username, uid, refreshToken }.
 let account = loadAccount();
 let accountView = 'choice';
@@ -221,12 +226,24 @@ faceButton.addEventListener('click', restartGame);
 document.querySelector('#open-settings').addEventListener('click', openAppearance);
 document.querySelector('#menu-appearance').addEventListener('click', openAppearance);
 document.querySelector('#menu-help').addEventListener('click', () => openTutorial(false));
-document.querySelector('#menu-options').addEventListener('click', () => {
-  delete accountRow.dataset.confirm;
-  updateAccountUi();
-  openDialog('options');
+document.querySelector('#menu-options').addEventListener('click', () => openDialog('options'));
+document.querySelector('#menu-profile').addEventListener('click', openProfile);
+accountButton.addEventListener('click', clickAccountButton);
+document.querySelector('#profile-picture').addEventListener('click', () => document.querySelector('#profile-file').click());
+document.querySelector('#profile-file').addEventListener('change', event => {
+  usePicture(event.target.files[0]);
+  event.target.value = '';
 });
-accountRow.addEventListener('click', clickAccountRow);
+document.querySelector('#profile-remove-picture').addEventListener('click', () => {
+  profile.picture = '';
+  saveProfile();
+  renderProfile();
+});
+bioInput.addEventListener('input', () => {
+  profile.bio = bioInput.value;
+  saveProfile();
+  document.querySelector('#profile-bio-count').textContent = `${bioInput.value.length}/150`;
+});
 document.querySelector('#account-signup').addEventListener('click', () => showAccountView('signup'));
 document.querySelector('#account-login').addEventListener('click', () => showAccountView('login'));
 document.querySelector('#account-guest').addEventListener('click', closeDialog);
@@ -1505,6 +1522,8 @@ function applyProgress(cloud) {
 // Re-reads everything an account carries, after it was replaced by a cloud save or a log out.
 function reloadProgress() {
   stats = loadStats();
+  profile = loadProfile();
+  if (openDialogName === 'profile') renderProfile();
   legacyMode = storageGet(legacyStorageKey) === 'true';
   accentColor = storageGet(accentStorageKey) || defaultAccent;
   musicOn = storageGet(musicStorageKey) !== 'false';
@@ -1535,12 +1554,14 @@ function logOut() {
   syncTimer = null;
   account = null;
   saveAccount();
-  // The stats belong to the account, so they leave with it. Settings stay as they are.
+  // The stats and profile belong to the account, so they leave with it. Settings stay as they are.
   applyingCloud = true;
   storageRemove(statsStorageKey);
+  storageRemove(profileStorageKey);
   applyingCloud = false;
   saveSyncInfo({ updatedAt: 0, dirty: false });
   stats = loadStats();
+  profile = loadProfile();
   syncState = 'saved';
   updateAccountUi();
 }
@@ -1551,31 +1572,33 @@ function setSyncState(state) {
 }
 
 function updateAccountUi() {
-  const action = accountRow.querySelector('b');
-  const status = document.querySelector('#account-status');
+  const status = document.querySelector('#profile-status');
+  const name = signedIn() ? account.username : 'Guest';
+  document.querySelector('#profile-name').textContent = name;
+  document.querySelector('#profile-initial').textContent = name[0].toUpperCase();
+  accountButton.classList.toggle('primary-button', !signedIn());
+  accountButton.classList.toggle('secondary-button', signedIn());
   if (signedIn()) {
-    document.querySelector('#account-name').textContent = account.username;
     status.textContent = {
       saving: 'Saving…',
       saved: 'Progress saved to your account',
       offline: "Offline. Saves when you're back online",
       error: "Couldn't save. Trying again soon"
     }[syncState];
-    action.textContent = accountRow.dataset.confirm ? 'Sure?' : 'Log Out';
+    accountButton.textContent = accountButton.dataset.confirm ? 'Sure? Log out' : 'Log Out';
   } else {
-    document.querySelector('#account-name').textContent = 'Guest';
     status.textContent = 'Progress only saved on this device';
-    action.textContent = 'Sign In';
+    accountButton.textContent = 'Sign Up or Log In';
   }
 }
 
-async function clickAccountRow() {
+async function clickAccountButton() {
   if (!signedIn()) {
     openAccount('choice');
     return;
   }
-  if (!accountRow.dataset.confirm) {
-    accountRow.dataset.confirm = 'yes';
+  if (!accountButton.dataset.confirm) {
+    accountButton.dataset.confirm = 'yes';
     updateAccountUi();
     return;
   }
@@ -1583,6 +1606,88 @@ async function clickAccountRow() {
   if (loadSyncInfo().dirty) await pushProgress();
   logOut();
   openAccount('choice', true);
+}
+
+// ---- Profile: picture, bio and the numbers worth showing off ----
+function loadProfile() {
+  try {
+    const stored = JSON.parse(storageGet(profileStorageKey));
+    return { picture: '', bio: '', ...(stored && typeof stored === 'object' ? stored : {}) };
+  } catch {
+    return { picture: '', bio: '' };
+  }
+}
+
+function saveProfile() {
+  storageSet(profileStorageKey, JSON.stringify(profile));
+}
+
+function openProfile() {
+  delete accountButton.dataset.confirm;
+  renderProfile();
+  openDialog('profile');
+}
+
+function renderProfile() {
+  updateAccountUi();
+  const image = document.querySelector('#profile-image');
+  image.classList.toggle('hidden', !profile.picture);
+  if (profile.picture) image.src = profile.picture;
+  else image.removeAttribute('src');
+  document.querySelector('#profile-initial').classList.toggle('hidden', Boolean(profile.picture));
+  document.querySelector('#profile-remove-picture').classList.toggle('hidden', !profile.picture);
+  document.querySelector('#profile-picture-error').textContent = '';
+  bioInput.value = profile.bio;
+  document.querySelector('#profile-bio-count').textContent = `${profile.bio.length}/150`;
+
+  const boards = Object.values(stats.boards);
+  const won = boards.reduce((sum, entry) => sum + entry.won, 0);
+  const played = boards.reduce((sum, entry) => sum + entry.played, 0);
+  document.querySelector('#profile-won').textContent = won;
+  document.querySelector('#profile-played').textContent = played;
+  document.querySelector('#profile-rate').textContent = played ? `${Math.round(won / played * 100)}%` : '0%';
+  document.querySelector('#profile-streak').textContent = boards.reduce((best, entry) => Math.max(best, entry.bestStreak), 0);
+  // Best time on each of the standard boards (custom sizes aren't comparable, so they stay in Stats).
+  document.querySelector('#profile-times').replaceChildren(...Object.entries(namedBoards).map(([key, label]) => {
+    const entry = stats.boards[key];
+    const item = document.createElement('div');
+    item.classList.toggle('empty', !(entry && entry.times.length));
+    const name = document.createElement('span');
+    name.textContent = label;
+    const time = document.createElement('b');
+    time.textContent = entry && entry.times.length ? formatTime(entry.times[0].time) : '—';
+    item.append(name, time);
+    return item;
+  }));
+}
+
+// Shrinks the picked image to a small square, so it's light enough to save with the account.
+function usePicture(file) {
+  const error = document.querySelector('#profile-picture-error');
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    error.textContent = "That file isn't a picture.";
+    return;
+  }
+  const url = URL.createObjectURL(file);
+  const image = new Image();
+  image.onload = () => {
+    const size = 160;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const side = Math.min(image.naturalWidth, image.naturalHeight);
+    canvas.getContext('2d').drawImage(image, (image.naturalWidth - side) / 2, (image.naturalHeight - side) / 2, side, side, 0, 0, size, size);
+    URL.revokeObjectURL(url);
+    profile.picture = canvas.toDataURL('image/jpeg', 0.85);
+    saveProfile();
+    renderProfile();
+  };
+  image.onerror = () => {
+    URL.revokeObjectURL(url);
+    error.textContent = "Couldn't open that picture. Try a JPG or PNG.";
+  };
+  image.src = url;
 }
 
 function openAccount(view, firstLaunch = false) {
