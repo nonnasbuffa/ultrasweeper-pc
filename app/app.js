@@ -92,7 +92,10 @@ const accountStorageKey = 'offline-minesweeper-account-v1';
 const syncStorageKey = 'offline-minesweeper-sync-v1';
 const profileStorageKey = 'offline-minesweeper-profile-v1';
 const badgesStorageKey = 'offline-minesweeper-badges-v1';
-const syncedKeys = [badgesStorageKey, profileStorageKey, statsStorageKey, legacyStorageKey, accentStorageKey, musicStorageKey, volumeStorageKey, tutorialStorageKey];
+const threeDStorageKey = 'offline-minesweeper-3d-v1';
+const threeDToggle = document.querySelector('#threed-toggle');
+const worldElement = document.querySelector('#world3d');
+const syncedKeys = [badgesStorageKey, profileStorageKey, statsStorageKey, legacyStorageKey, threeDStorageKey, accentStorageKey, musicStorageKey, volumeStorageKey, tutorialStorageKey];
 const accountButton = document.querySelector('#profile-account');
 const bioInput = document.querySelector('#profile-bio');
 // Profile picture and bio; they travel with the account like the stats do.
@@ -158,6 +161,7 @@ const defaults = {
 
 let assets = loadAssets();
 let legacyMode = storageGet(legacyStorageKey) === 'true';
+let threeDMode = storageGet(threeDStorageKey) === 'true';
 let accentColor = storageGet(accentStorageKey) || defaultAccent;
 let musicOn = storageGet(musicStorageKey) !== 'false';
 let musicVolume = storageGet(volumeStorageKey) === null ? 100 : Number(storageGet(volumeStorageKey));
@@ -187,6 +191,7 @@ let statsBoard = '9x9x10';
 let arenaFit = Infinity;
 
 applyLegacyMode();
+applyThreeDMode();
 applyAccentColor();
 loadCustomSongs();
 applyVolume();
@@ -392,6 +397,7 @@ document.querySelector('#restore-assets').addEventListener('click', () => {
   refreshGameAppearance();
 });
 legacyToggle.addEventListener('click', () => setLegacyMode(!legacyMode));
+threeDToggle.addEventListener('click', () => setThreeDMode(!threeDMode));
 musicToggle.addEventListener('click', () => setMusic(!musicOn));
 volumeInput.addEventListener('input', () => {
   musicVolume = Number(volumeInput.value);
@@ -607,6 +613,8 @@ const arrowMoves = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], A
 
 function handleArrowKeys(event) {
   if (openDialogName || event.ctrlKey || event.altKey || event.metaKey) return;
+  // In 3D Mode the arrows walk the stickman instead.
+  if (currentScreen === 'game' && window.Ultra3D.active()) return;
   if (event.target instanceof Element && event.target.closest('input, textarea, select, #admin-panel')) return;
   const move = arrowMoves[event.key];
   const flagKey = event.key === 'f' || event.key === 'F';
@@ -675,6 +683,7 @@ function backToMenu() {
   toggleAdminPanel(false);
   stopTimer();
   showScreen('mode');
+  syncThreeD();
 }
 
 function updateClock() {
@@ -924,6 +933,7 @@ function openDialog(name) {
   dialogReturnFocus = document.activeElement;
   const dialog = dialogs[name];
   dialog.classList.remove('hidden', 'closing');
+  window.Ultra3D.releaseMouse();
   pauseTimer();
   const focusTarget = dialog.querySelector('input:not([type="range"]), .primary-button, .upload-button');
   if (focusTarget) window.setTimeout(() => focusTarget.focus(), 60);
@@ -1113,7 +1123,7 @@ function startGame(width, height, mines, duel = null) {
     flags: 0,
     revealedSafe: 0
   };
-  statusElement.textContent = 'Click any tile to start.';
+  statusElement.textContent = threeDMode ? 'Dig any tile with your shovel to start.' : 'Click any tile to start.';
   statusElement.className = 'game-status';
   if (duel === 'setup') showDuelStatus();
   showScreen('game');
@@ -1121,6 +1131,7 @@ function startGame(width, height, mines, duel = null) {
   updateHud();
   applyDuelUi();
   keepArenaOnScreen();
+  syncThreeD();
 }
 
 function buildBoard() {
@@ -1658,10 +1669,12 @@ function reloadProgress() {
   checkBadges(true);
   if (openDialogName === 'profile') renderProfile();
   legacyMode = storageGet(legacyStorageKey) === 'true';
+  threeDMode = storageGet(threeDStorageKey) === 'true';
   accentColor = storageGet(accentStorageKey) || defaultAccent;
   musicOn = storageGet(musicStorageKey) !== 'false';
   musicVolume = storageGet(volumeStorageKey) === null ? 100 : Number(storageGet(volumeStorageKey));
   applyLegacyMode();
+  applyThreeDMode();
   applyAccentColor();
   applyVolume();
   applyMusic();
@@ -2456,6 +2469,46 @@ function applyLegacyMode() {
   legacyToggle.setAttribute('aria-pressed', String(legacyMode));
   legacyToggle.querySelector('b').textContent = legacyMode ? 'On' : 'Off';
   window.UltraMusic.setTrack(legacyMode ? 'legacy' : 'modern');
+}
+
+function setThreeDMode(value) {
+  threeDMode = value;
+  storageSet(threeDStorageKey, String(threeDMode));
+  applyThreeDMode();
+}
+
+function applyThreeDMode() {
+  threeDToggle.setAttribute('aria-pressed', String(threeDMode));
+  threeDToggle.querySelector('b').textContent = threeDMode ? 'On' : 'Off';
+  syncThreeD();
+}
+
+// 3D Mode draws the current match as a world to walk around in; the rules below stay exactly the same.
+function syncThreeD() {
+  const wanted = threeDMode && currentScreen === 'game' && Boolean(game);
+  document.body.classList.toggle('play-3d', wanted);
+  if (!wanted) {
+    if (window.Ultra3D.active()) window.Ultra3D.stop();
+    return;
+  }
+  if (window.Ultra3D.active()) return;
+  window.Ultra3D.start(worldElement, {
+    getGame: () => game,
+    tileState,
+    dig: index => {
+      if (game.tiles[index].revealed) chord(index);
+      else reveal(index);
+    },
+    flag: index => toggleFlag(index),
+    legacy: () => legacyMode,
+    touch: () => document.documentElement.classList.contains('touch-device'),
+    motion: () => motionEnabled(),
+    canPlay: () => !openDialogName && currentScreen === 'game'
+  }).catch(() => {
+    // No 3D graphics on this device: the normal board still works.
+    document.body.classList.remove('play-3d');
+    setStatus("3D Mode couldn't start on this device, so here's the normal board.", 'lose');
+  });
 }
 
 function openAppearance() {

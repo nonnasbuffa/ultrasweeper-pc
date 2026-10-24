@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="is-loading">
+    <!-- 3D Mode: the match is drawn here, behind the game buttons. -->
+    <div id="world3d" class="world3d"></div>
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
       <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></symbol>
       <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></symbol>
@@ -25,6 +27,7 @@
       <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M4.5 20.5c.6-4 3.6-6.4 7.5-6.4s6.9 2.4 7.5 6.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></symbol>
       <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="2" /></symbol>
       <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.2" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7" fill="none" stroke="currentColor" stroke-width="2.2" /></symbol>
+      <symbol id="icon-cube" viewBox="0 0 24 24"><path d="M12 2.8 20 7.2v9.6l-8 4.4-8-4.4V7.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M4.3 7.4 12 11.7l7.7-4.3M12 11.7v9.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></symbol>
       <symbol id="icon-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2" /><path d="M3.6 12h16.8M12 3.4c2.4 2.4 3.6 5.3 3.6 8.6s-1.2 6.2-3.6 8.6c-2.4-2.4-3.6-5.3-3.6-8.6s1.2-6.2 3.6-8.6z" fill="none" stroke="currentColor" stroke-width="1.8" /></symbol>
       <symbol id="badge-flag" viewBox="0 0 24 24"><path d="M7 21V4M7 4.5h10l-2.4 3.6L17 11.7H7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" /></symbol>
       <symbol id="badge-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" fill="currentColor" /></symbol>
@@ -248,6 +251,9 @@
           </label>
           <button id="legacy-toggle" class="legacy-toggle option-row" type="button" aria-pressed="false">
             <svg class="admin-toggle-icon"><use href="#icon-computer" /></svg><span>Legacy Mode</span><b>Off</b>
+          </button>
+          <button id="threed-toggle" class="legacy-toggle option-row" type="button" aria-pressed="false">
+            <svg class="admin-toggle-icon"><use href="#icon-cube" /></svg><span>3D Mode</span><b>Off</b>
           </button>
           <button id="menu-appearance" class="legacy-toggle option-row" type="button">
             <svg class="admin-toggle-icon"><use href="#icon-palette" /></svg><span>Appearance</span><b>Open</b>
@@ -590,6 +596,7 @@
     </div>
     <script src="music.js"></script>
     <script src="cloud.js"></script>
+    <script src="world3d.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

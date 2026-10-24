@@ -1689,3 +1689,64 @@ body.legacy-mode #friends-error.ok { color: #006400; }
   body:not(.legacy-mode) .menu-header-actions .icon-toggle, body:not(.legacy-mode) .menu-header-actions .admin-toggle { padding: 6px 9px; }
   body:not(.legacy-mode) .menu-header-actions .admin-toggle span { display: none; }
 }
+
+/* ---- 3D Mode: the match is a world behind the game buttons. ---- */
+.world3d { display: none; }
+body.play-3d .world3d { position: fixed; z-index: 0; inset: 0; display: block; overflow: hidden; background: #0b0e15; }
+body.play-3d.legacy-mode .world3d { bottom: calc(30px + var(--safe-bottom, 0px)); background: #7aa7e8; }
+.world3d-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+body.play-3d .app-shell { position: relative; z-index: 1; pointer-events: none; }
+body.play-3d .app-shell button, body.play-3d .game-panel, body.play-3d .duel-bar { pointer-events: auto; }
+body.play-3d .board-wrap, body.play-3d .game-hint, body.play-3d .arena-lock, body.play-3d .arena-grip, body.play-3d .arena::before { display: none; }
+body.play-3d .arena, body.play-3d.legacy-mode .game-screen { translate: none; }
+body.play-3d:not(.legacy-mode) .game-panel { background: #141a23d9; backdrop-filter: blur(10px); }
+body.play-3d:not(.legacy-mode) .game-status { width: max-content; max-width: calc(100vw - 40px); margin-inline: auto; padding: 5px 14px; border-radius: 999px; background: #0b0e15b8; }
+body.play-3d.legacy-mode .game-screen { grid-template-areas: "title" "menu" "panel" "status" "duel"; grid-template-columns: 1fr; }
+
+.world3d-hud { position: absolute; inset: 0; pointer-events: none; }
+.world3d-crosshair { position: absolute; top: 50%; left: 50%; width: 22px; height: 22px; translate: -50% -50%; }
+.world3d-crosshair::before, .world3d-crosshair::after { position: absolute; border-radius: 2px; background: #effffb; box-shadow: 0 0 0 1px #0009, 0 0 8px #5cf0d0; content: ''; }
+.world3d-crosshair::before { top: 10px; left: 2px; width: 18px; height: 2px; }
+.world3d-crosshair::after { top: 2px; left: 10px; width: 2px; height: 18px; }
+body.legacy-mode .world3d-crosshair::before, body.legacy-mode .world3d-crosshair::after { background: #000; box-shadow: 0 0 0 1px #fff; }
+
+.world3d-hotbar { position: absolute; bottom: calc(18px + var(--safe-bottom, 0px)); left: 50%; display: flex; gap: 8px; translate: -50% 0; }
+.world3d-hotbar button { display: grid; justify-items: center; gap: 3px; min-width: 76px; padding: 8px 10px 6px; border: 1px solid #2c3544; border-radius: 14px; background: #111823d9; color: #e5edf9; font: 700 .7rem/1 inherit; font-family: inherit; backdrop-filter: blur(8px); }
+.world3d-hotbar svg { width: 26px; height: 26px; }
+.world3d-hotbar [data-tool="dig"] svg { color: #5cf0d0; }
+.world3d-hotbar [data-tool="flag"] svg { color: #ff5d6c; }
+.world3d-hotbar span { color: #8fa0b6; }
+.world3d-hotbar button.used { animation: tool-used .28s var(--ease-out, ease-out); }
+@keyframes tool-used { 0% { transform: scale(.86); border-color: #5cf0d0; } 100% { transform: none; } }
+body.legacy-mode .world3d-hotbar button { min-width: 70px; border: 1px solid #003c74; border-radius: 3px; background: linear-gradient(#fff, #ece9d8); color: #000; font: 11px Tahoma, Verdana, sans-serif; backdrop-filter: none; }
+body.legacy-mode .world3d-hotbar span { color: #000; }
+body.legacy-mode .world3d-hotbar [data-tool="dig"] svg { color: #6b4a1f; }
+body.legacy-mode .world3d-hotbar [data-tool="flag"] svg { color: #e00000; }
+body.legacy-mode .world3d-hotbar button.used { animation: none; }
+
+.world3d-start { position: absolute; top: 56%; left: 50%; display: grid; justify-items: center; gap: 10px; width: min(340px, calc(100vw - 32px)); padding: 20px 22px; border: 1px solid #2c3544; border-radius: 18px; background: #111823e8; color: #e5edf9; text-align: center; translate: -50% -50%; cursor: pointer; pointer-events: auto; box-shadow: 0 18px 45px #0006; }
+.world3d-start strong { font-size: 1.35rem; }
+.world3d-start > span { padding: 7px 16px; border-radius: 999px; background: #5cf0d0; color: #062019; font-weight: 800; animation: start-pulse 1.6s ease-in-out infinite; }
+@keyframes start-pulse { 50% { box-shadow: 0 0 0 7px #5cf0d033; } }
+.world3d-start ul { display: grid; gap: 5px; margin: 4px 0 0; padding: 0; color: #aeb9c9; font-size: .82rem; list-style: none; }
+.world3d-start b { color: #e5edf9; }
+body.legacy-mode .world3d-start { border: 1px solid #000; border-radius: 3px; background: #ffffe1; color: #000; font: 12px Tahoma, Verdana, sans-serif; box-shadow: 2px 2px 0 #0004; }
+body.legacy-mode .world3d-start strong { font-size: 14px; }
+body.legacy-mode .world3d-start > span { border: 1px solid #003c74; border-radius: 3px; background: linear-gradient(#fff, #ece9d8); color: #000; font-weight: 400; animation: none; }
+body.legacy-mode .world3d-start ul, body.legacy-mode .world3d-start b { color: #000; }
+
+/* Phones: stick on the left, tools on the right. */
+.touch-device .world3d-hotbar { right: calc(16px + var(--safe-right, 0px)); left: auto; flex-direction: column-reverse; gap: 10px; translate: none; pointer-events: auto; }
+.touch-device .world3d-hotbar button { min-width: 0; width: 74px; height: 70px; align-content: center; touch-action: none; }
+.touch-device .world3d-hotbar [data-tool="dig"] { width: 84px; height: 84px; border-radius: 50%; }
+.touch-device .world3d-hotbar [data-tool="flag"] { width: 64px; height: 64px; margin-left: 10px; border-radius: 50%; }
+.touch-device .world3d-hotbar span { color: #e5edf9; }
+.touch-device body.legacy-mode .world3d-hotbar button { border-radius: 50%; }
+.world3d-stick { position: absolute; bottom: calc(26px + var(--safe-bottom, 0px)); left: calc(22px + var(--safe-left, 0px)); display: grid; place-items: center; width: 130px; height: 130px; border: 2px solid #ffffff2e; border-radius: 50%; background: #0b0e1566; pointer-events: auto; touch-action: none; }
+.world3d-stick i { width: 56px; height: 56px; border-radius: 50%; background: #e5edf9cc; box-shadow: 0 4px 14px #0006; }
+.world3d-jump, .world3d-view { position: absolute; display: grid; place-items: center; border: 1px solid #2c3544; border-radius: 50%; background: #111823d9; color: #e5edf9; font: 700 .72rem inherit; font-family: inherit; pointer-events: auto; touch-action: none; }
+.world3d-jump { right: calc(118px + var(--safe-right, 0px)); bottom: calc(24px + var(--safe-bottom, 0px)); width: 62px; height: 62px; }
+.world3d-view { right: calc(118px + var(--safe-right, 0px)); bottom: calc(100px + var(--safe-bottom, 0px)); width: 48px; height: 48px; }
+body.legacy-mode .world3d-stick { border-color: #003c74; background: #ffffff55; }
+body.legacy-mode .world3d-stick i { background: linear-gradient(#fff, #ece9d8); border: 1px solid #003c74; }
+body.legacy-mode .world3d-jump, body.legacy-mode .world3d-view { border: 1px solid #003c74; background: linear-gradient(#fff, #ece9d8); color: #000; font: 11px Tahoma, Verdana, sans-serif; }
