@@ -1750,3 +1750,10 @@ body.legacy-mode .world3d-start ul, body.legacy-mode .world3d-start b { color: #
 body.legacy-mode .world3d-stick { border-color: #003c74; background: #ffffff55; }
 body.legacy-mode .world3d-stick i { background: linear-gradient(#fff, #ece9d8); border: 1px solid #003c74; }
 body.legacy-mode .world3d-jump, body.legacy-mode .world3d-view { border: 1px solid #003c74; background: linear-gradient(#fff, #ece9d8); color: #000; font: 11px Tahoma, Verdana, sans-serif; }
+.world3d-start.compact { width: auto; padding: 0; border: 0; background: none; box-shadow: none; }
+body.legacy-mode .world3d-start.compact { border: 0; background: none; box-shadow: none; }
+.world3d-tip { position: absolute; bottom: calc(96px + var(--safe-bottom, 0px)); left: 50%; padding: 7px 16px; border-radius: 999px; background: #0b0e15cc; color: #e5edf9; font-weight: 700; white-space: nowrap; translate: -50% 0; animation: rise-in .4s var(--ease-out, ease-out) both; }
+.world3d-tip b { color: #5cf0d0; }
+.touch-device .world3d-tip { top: 40%; bottom: auto; }
+body.legacy-mode .world3d-tip { border: 1px solid #000; border-radius: 3px; background: #ffffe1; color: #000; font: 12px Tahoma, Verdana, sans-serif; animation: none; }
+body.legacy-mode .world3d-tip b { color: #000; }

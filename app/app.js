@@ -500,6 +500,14 @@ boardElement.addEventListener('pointermove', event => {
 });
 boardElement.addEventListener('pointerleave', () => { hoveredTile = null; });
 document.addEventListener('keydown', handleArrowKeys);
+// R starts over in every mode: a new board, or the same 2-player board again.
+document.addEventListener('keydown', event => {
+  if (event.code !== 'KeyR' || event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
+  if (currentScreen !== 'game' || !game || openDialogName) return;
+  if (event.target instanceof Element && event.target.closest('input, textarea, select')) return;
+  event.preventDefault();
+  restartGame();
+});
 boardElement.addEventListener('pointerdown', event => {
   if (event.pointerType !== 'touch') {
     longPress = null;
