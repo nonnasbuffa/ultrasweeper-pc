@@ -15,13 +15,13 @@
     modern: {
       sky: '#0b0e15', fog: 28, ground: '#0f151e', grid: '#1b2533', rim: '#1d2633',
       block: ['#2e3a4d', '#43536b', '#1d2532'], floor: ['#151c26', '#1f2836'],
-      stick: '#ff8a1e', ink: '#121418', dust: '#8fa0b6', outline: '#5cf0d0', cloth: '#ff5d6c', exploded: '#ff5050',
+      stick: '#eef3fa', ink: '#0b0e15', dust: '#8fa0b6', outline: '#5cf0d0', cloth: '#ff5d6c', exploded: '#ff5050',
       numbers: ['#6fcaff', '#79e8ad', '#ff9d9d', '#b1a2ff', '#ffbd80', '#77e2e8', '#ffffff', '#b7c1d0']
     },
     legacy: {
       sky: '#7aa7e8', fog: 0, ground: '#5d9b3b', grid: null, rim: '#808080',
       block: ['#c0c0c0', '#ffffff', '#808080'], floor: ['#bdbdbd', '#7b7b7b'],
-      stick: '#000000', ink: '#000000', dust: null, outline: '#000000', cloth: '#ff0000', exploded: '#ff0000',
+      stick: '#111111', ink: '#000000', dust: null, outline: '#000000', cloth: '#ff0000', exploded: '#ff0000',
       numbers: ['#0000ff', '#008000', '#ff0000', '#000080', '#800000', '#008080', '#000000', '#808080']
     }
   };
@@ -206,11 +206,11 @@
     }
   }
 
-  // ---- The stickman: one flat colour and an ink outline, like a hand-drawn stick figure (no face, no shading).
+  // ---- The stickman, drawn like Eraser's: skinny ink-line limbs and a big round white head with a thick outline and a band.
   // Built facing -z with his right hand on +x. Arms and legs are two pieces each, so elbows and knees bend.
   function buildStickman(look, legacy) {
-    const radius = 0.064;
-    const line = legacy ? 0 : 0.026;
+    const radius = 0.03;
+    const line = 0;
     const fill = new THREE.MeshBasicMaterial({ color: look.stick });
     const ink = new THREE.MeshBasicMaterial({ color: look.ink, side: THREE.BackSide });
     // A shape plus a slightly fatter copy drawn inside out in ink, which reads as an outline from any angle.
@@ -254,7 +254,14 @@
     // The head floats just above the body, the way stick figures are drawn.
     const head = new THREE.Group();
     head.position.y = 0.73;
-    head.add(inked(extra => new THREE.SphereGeometry(0.2 + extra, 20, 14)));
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.23, 20, 14), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
+    skull.castShadow = true;
+    const rim = new THREE.Mesh(new THREE.SphereGeometry(0.23 + (legacy ? 0.03 : 0.038), 20, 14), ink);
+    // One slanted line across the head.
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.232, 0.02, 6, 28), new THREE.MeshBasicMaterial({ color: look.ink }));
+    band.rotation.set(Math.PI / 2 - 0.2, 0.35, 0);
+    band.position.y = 0.04;
+    head.add(skull, rim, band);
     torso.add(head);
     const legs = [limb(hips, -0.07, 0, 0.42, 0.42), limb(hips, 0.07, 0, 0.42, 0.42)];
     const arms = [limb(torso, -0.05, 0.45, 0.3, 0.3), limb(torso, 0.05, 0.45, 0.3, 0.3)];
@@ -982,7 +989,11 @@
         if (action.t >= (action.tool === 'dig' ? digTime : plantTime)) anim.action = null;
       }
     }
-    applyPose(stick, pose);
+    anim.drawClock = (anim.drawClock || 0) + dt;
+    if (anim.drawClock >= 1 / 15 || anim.action || anim.lose) {
+      anim.drawClock = 0;
+      applyPose(stick, pose);
+    }
     stick.body.position.y = lift;
     stick.body.rotation.set(tumble, spin, 0);
     // In first person the camera sits inside the head, so the body would only get in the way.
@@ -1008,13 +1019,13 @@
       // The camera trails the stickman slightly, which makes steps, jumps and landings feel weighty.
       if (!w.follow) w.follow = head.clone();
       w.follow.lerp(head, 1 - Math.exp(-dt * 14));
-      const distance = (w.touch ? 4.4 : 4) + down * 1.8;
-      camera.position.copy(w.follow).addScaledVector(direction, -distance).addScaledVector(right, 0.75);
-      camera.position.y += 0.35 + down * 1.6;
+      const distance = (w.touch ? 2.9 : 2.5) + down * 3;
+      camera.position.copy(w.follow).addScaledVector(direction, -distance).addScaledVector(right, (w.touch ? 0.5 : 0.95) - down * 0.4);
+      camera.position.y += 0.1 + down * 2;
       camera.position.y = Math.max(camera.position.y, groundAt(w, camera.position.x, camera.position.z) + 0.25);
     }
     // Widens a little while running.
-    const fov = 70 + (player.running && player.moving > 0.5 && !w.anim.lose ? 7 : 0);
+    const fov = 76 + (player.running && player.moving > 0.5 && !w.anim.lose ? 7 : 0);
     if (Math.abs(camera.fov - fov) > 0.05) {
       camera.fov += (fov - camera.fov) * Math.min(1, dt * 6);
       camera.updateProjectionMatrix();
