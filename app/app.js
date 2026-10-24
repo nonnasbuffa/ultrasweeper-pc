@@ -15,7 +15,8 @@ const dialogs = {
   profile: document.querySelector('#profile-screen'),
   maps: document.querySelector('#maps-screen'),
   mapNew: document.querySelector('#map-new-screen'),
-  mapDone: document.querySelector('#map-done-screen')
+  mapDone: document.querySelector('#map-done-screen'),
+  friends: document.querySelector('#friends-screen')
 };
 
 const boardElement = document.querySelector('#board');
@@ -108,19 +109,24 @@ const badgeList = [
   { id: 'first-win', name: 'First Sweep', description: 'Win your first game.', color: '#4cc77f', glyph: 'flag', test: s => s.won >= 1 },
   { id: 'wins-10', name: 'Sweeper', description: 'Win 10 games.', color: '#4fa8ff', glyph: 'star', test: s => s.won >= 10 },
   { id: 'wins-100', name: 'Veteran', description: 'Win 100 games.', color: '#a56bff', glyph: 'crown', test: s => s.won >= 100 },
-  { id: 'quick', name: 'Quick Hands', description: 'Win Beginner in under 30 seconds.', color: '#ff9d4d', glyph: 'bolt', test: s => s.beginnerBest < 30 },
+  { id: 'quick', name: 'Quick Hands', description: 'Win Beginner in under 30 seconds.', color: '#ff9d4d', glyph: 'stopwatch', test: s => s.beginnerBest < 30 },
   { id: 'lightning', name: 'Lightning', description: 'Win Beginner in under 10 seconds.', color: '#f2c200', glyph: 'bolt', test: s => s.beginnerBest < 10 },
-  { id: 'medium', name: 'Getting Serious', description: 'Win a Medium game.', color: '#2fc4b2', glyph: 'mine', test: s => s.wonOn('16x16x40') },
-  { id: 'hard', name: 'Hard Hat', description: 'Win a Hard game.', color: '#ff6b6b', glyph: 'mine', test: s => s.wonOn('30x16x99') },
-  { id: 'insane', name: 'Insane!', description: 'Win an Insane game.', color: '#e0457b', glyph: 'flame', test: s => s.wonOn('30x24x180') },
+  { id: 'medium', name: 'Getting Serious', description: 'Win a Medium game.', color: '#2fc4b2', glyph: 'target', test: s => s.wonOn('16x16x40') },
+  { id: 'hard', name: 'Hard Hat', description: 'Win a Hard game.', color: '#ff6b6b', glyph: 'helmet', test: s => s.wonOn('30x16x99') },
+  { id: 'insane', name: 'Insane!', description: 'Win an Insane game.', color: '#e0457b', glyph: 'skull', test: s => s.wonOn('30x24x180') },
   { id: 'on-fire', name: 'On Fire', description: 'Win 5 games in a row.', color: '#ff6a2b', glyph: 'flame', test: s => s.bestStreak >= 5 },
-  { id: 'mapmaker', name: 'Mapmaker', description: 'Publish an online map.', color: '#38b6ff', glyph: 'globe' },
-  { id: 'explorer', name: 'Explorer', description: "Clear another player's online map.", color: '#7bd44a', glyph: 'globe' }
+  { id: 'mapmaker', name: 'Mapmaker', description: 'Publish an online map.', color: '#38b6ff', glyph: 'pencil' },
+  { id: 'explorer', name: 'Explorer', description: "Clear another player's online map.", color: '#7bd44a', glyph: 'compass' }
 ];
 let badges = loadBadges();
 // Online maps: the list being shown, and the order it's sorted in.
 let mapsOrder = 'createdAt';
 const mapCodeLetters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+// Friends: incoming requests already announced with a pop-up, so each one only pops up once.
+const announcedRequests = new Set();
+let friendsTimer = null;
+// The badges shown on the profile: yours, or the friend's you're looking at.
+let shownBadges = {};
 // This username gets the gold aura on its profile.
 const goldAuraPlayers = ['aski650'];
 // null = not asked yet, { guest: true }, or a signed-in player { username, uid, refreshToken }.
@@ -275,6 +281,20 @@ document.querySelector('#menu-help').addEventListener('click', () => openTutoria
 document.querySelector('#menu-options').addEventListener('click', () => openDialog('options'));
 document.querySelector('#menu-profile').addEventListener('click', openProfile);
 document.querySelector('#menu-maps').addEventListener('click', openMaps);
+document.querySelector('#menu-friends').addEventListener('click', openFriends);
+document.querySelector('#friends-login').addEventListener('click', () => openAccount('choice'));
+document.querySelector('#friend-add-form').addEventListener('submit', sendFriendRequest);
+document.querySelector('#profile-back').addEventListener('click', openFriends);
+document.querySelector('#friend-requests').addEventListener('click', event => {
+  const button = event.target.closest('[data-request]');
+  if (button) answerRequest(button);
+});
+document.querySelector('#friends-list').addEventListener('click', event => {
+  const view = event.target.closest('[data-view]');
+  if (view) viewFriend(view.dataset.view);
+  const remove = event.target.closest('[data-unfriend]');
+  if (remove) removeFriend(remove);
+});
 document.querySelector('#maps-code-form').addEventListener('submit', event => {
   event.preventDefault();
   const code = document.querySelector('#maps-code').value.trim().toUpperCase();
@@ -311,10 +331,10 @@ document.querySelector('#profile-badges').addEventListener('click', event => {
   const medal = event.target.closest('[data-badge]');
   if (!medal) return;
   const badge = badgeList.find(item => item.id === medal.dataset.badge);
-  const when = badges[badge.id];
-  document.querySelector('#profile-badge-info').textContent = when
-    ? `${badge.name}: ${badge.description} Earned ${new Date(when).toLocaleDateString([], { dateStyle: 'medium' })}.`
-    : `${badge.name} (locked): ${badge.description}`;
+  const when = shownBadges[badge.id];
+  document.querySelector('#profile-badge-info').textContent = !when
+    ? `${badge.name} (locked): ${badge.description}`
+    : when > 1 ? `${badge.name}: ${badge.description} Earned ${new Date(when).toLocaleDateString([], { dateStyle: 'medium' })}.` : `${badge.name}: ${badge.description}`;
 });
 document.querySelector('#profile-add-admin').addEventListener('click', openAdminDialog);
 document.querySelector('#platinum').addEventListener('click', hidePlatinum);
@@ -1607,6 +1627,7 @@ async function pullProgress(justLoggedIn = false) {
     // Keeps the public profile (and its admin badge) up to date, including for accounts made before profiles existed.
     await publishMyProfile(session);
     setSyncState('saved');
+    watchFriendRequests();
   } catch (error) {
     cloudFailed(error, session);
   }
@@ -1662,6 +1683,8 @@ function cloudFailed(error, session) {
 }
 
 function logOut() {
+  window.clearInterval(friendsTimer);
+  announcedRequests.clear();
   window.clearTimeout(syncTimer);
   syncTimer = null;
   account = null;
@@ -1686,6 +1709,9 @@ function setSyncState(state) {
 }
 
 function updateAccountUi() {
+  document.querySelector('#xp-status-user').textContent = signedIn() ? `Signed in as ${account.username}` : 'Playing as Guest';
+  document.querySelector('#menu-friends').classList.toggle('hidden', false);
+  if (!signedIn()) setFriendAlert(0);
   accountButton.classList.toggle('primary-button', !signedIn());
   accountButton.classList.toggle('secondary-button', signedIn());
   if (signedIn()) accountButton.textContent = accountButton.dataset.confirm ? 'Sure? Log out' : 'Log Out';
@@ -1837,6 +1863,7 @@ function renderProfile() {
   accountButton.classList.toggle('hidden', viewing);
   document.querySelector('#profile-remove-picture').classList.toggle('hidden', viewing || !profile.picture);
   document.querySelector('#profile-add-admin').classList.toggle('hidden', viewing || !signedIn() || Boolean(account.admin) || !adminState.unlocked);
+  document.querySelector('#profile-back').classList.toggle('hidden', !viewing);
   renderBadges();
 }
 
@@ -1916,9 +1943,11 @@ function awardBadge(id, quiet = false) {
 }
 
 function renderBadges() {
-  const earned = badgeList.filter(badge => badges[badge.id]).length;
+  shownBadges = profileView ? Object.fromEntries(String(profileView.badges || '').split(',').filter(Boolean).map(id => [id, 1])) : badges;
+  const earned = badgeList.filter(badge => shownBadges[badge.id]).length;
   document.querySelector('#profile-badge-count').textContent = `${earned}/${badgeList.length}`;
-  document.querySelector('#profile-badges').innerHTML = badgeList.map(badge => `<button class="badge-slot" type="button" data-badge="${badge.id}" title="${badge.name}: ${badge.description}" aria-label="${badge.name}${badges[badge.id] ? '' : ' (locked)'}">${badgeMedal(badge, Boolean(badges[badge.id]))}</button>`).join('');
+  document.querySelector('#profile-badges').innerHTML = badgeList.map(badge => `<button class="badge-slot" type="button" data-badge="${badge.id}" title="${badge.name}: ${badge.description}" aria-label="${badge.name}${shownBadges[badge.id] ? '' : ' (locked)'}">${badgeMedal(badge, Boolean(shownBadges[badge.id]))}</button>`).join('');
+  document.querySelector('#profile-badge-info').textContent = profileView ? 'Tap a badge to see what it is.' : 'Tap a badge to see how to earn it.';
 }
 
 // ---- Online maps: build a board, publish it with a share code, play other people's ----
@@ -2095,6 +2124,270 @@ async function copyMapCode() {
   }
 }
 
+// ---- Friends: send a request by username, accept or decline, view friends' profiles ----
+function setFriendAlert(count) {
+  const alert = document.querySelector('#friends-alert');
+  alert.textContent = count > 9 ? '9+' : count;
+  alert.classList.toggle('hidden', !count);
+}
+
+function watchFriendRequests() {
+  window.clearInterval(friendsTimer);
+  if (!signedIn()) return;
+  checkFriendRequests();
+  friendsTimer = window.setInterval(checkFriendRequests, 90000);
+}
+
+async function checkFriendRequests() {
+  if (!signedIn()) return;
+  const session = account;
+  try {
+    const incoming = await window.UltraCloud.listRequests(session, 'incoming');
+    if (account !== session) return;
+    setFriendAlert(incoming.length);
+    incoming.forEach(request => {
+      if (announcedRequests.has(request.from)) return;
+      announcedRequests.add(request.from);
+      queueToast({
+        kind: 'badge',
+        art: badgeMedal({ color: '#4fa8ff', glyph: 'star' }).replace('#badge-star', '#icon-friends'),
+        kicker: 'Friend request!',
+        title: request.fromName,
+        icon: false,
+        sub: 'Open Friends to accept it.',
+        sound: [659.25, 987.77]
+      });
+    });
+    if (openDialogName === 'friends') renderFriends();
+  } catch {
+    // Offline or a hiccup: the next check will try again.
+  }
+}
+
+function openFriends() {
+  const guest = !signedIn();
+  document.querySelector('#friends-guest').classList.toggle('hidden', !guest);
+  document.querySelector('#friends-main').classList.toggle('hidden', guest);
+  document.querySelector('#friends-error').textContent = '';
+  document.querySelector('#friend-name').value = '';
+  profileView = null;
+  openDialog('friends');
+  if (!guest) renderFriends();
+}
+
+function friendAvatar(picture, name) {
+  const avatar = document.createElement('span');
+  avatar.className = 'friend-avatar';
+  avatar.classList.toggle('aura-gold', goldAuraPlayers.includes(name.toLowerCase()));
+  if (picture) {
+    const image = document.createElement('img');
+    image.src = picture;
+    image.alt = '';
+    avatar.append(image);
+  } else {
+    avatar.textContent = name[0].toUpperCase();
+  }
+  return avatar;
+}
+
+function friendButton(text, data, primary = false) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = primary ? 'primary-button' : 'secondary-button';
+  Object.assign(button.dataset, data);
+  button.textContent = text;
+  return button;
+}
+
+async function renderFriends() {
+  const session = account;
+  const empty = document.querySelector('#friends-empty');
+  const list = document.querySelector('#friends-list');
+  empty.classList.remove('hidden');
+  empty.textContent = 'Loading friends…';
+  try {
+    const [incoming, outgoing, friends] = await Promise.all([
+      window.UltraCloud.listRequests(session, 'incoming'),
+      window.UltraCloud.listRequests(session, 'outgoing'),
+      window.UltraCloud.listFriends(session)
+    ]);
+    if (account !== session || openDialogName !== 'friends') return;
+    setFriendAlert(incoming.length);
+
+    // Requests: ones sent to you can be accepted or declined; ones you sent can be cancelled.
+    document.querySelector('#friend-requests-block').classList.toggle('hidden', !incoming.length && !outgoing.length);
+    document.querySelector('#friend-requests').replaceChildren(
+      ...incoming.map(request => {
+        const row = document.createElement('li');
+        row.className = 'maps-row friend-row';
+        const text = document.createElement('div');
+        const name = document.createElement('b');
+        name.textContent = request.fromName;
+        const note = document.createElement('small');
+        note.textContent = 'wants to be your friend';
+        text.append(name, note);
+        const actions = document.createElement('div');
+        actions.className = 'maps-actions';
+        actions.append(friendButton('Decline', { request: 'decline', from: request.from }), friendButton('Accept', { request: 'accept', from: request.from, name: request.fromName }, true));
+        row.append(friendAvatar('', request.fromName), text, actions);
+        return row;
+      }),
+      ...outgoing.map(request => {
+        const row = document.createElement('li');
+        row.className = 'maps-row friend-row';
+        const text = document.createElement('div');
+        const name = document.createElement('b');
+        name.textContent = request.toName;
+        const note = document.createElement('small');
+        note.textContent = 'Request sent, waiting for an answer';
+        text.append(name, note);
+        const actions = document.createElement('div');
+        actions.className = 'maps-actions';
+        actions.append(friendButton('Cancel', { request: 'cancel', to: request.to }));
+        row.append(friendAvatar('', request.toName), text, actions);
+        return row;
+      })
+    );
+
+    // Friends, with their pictures and wins from their public profiles.
+    const cards = await Promise.all(friends.map(friend => window.UltraCloud.getProfile(friend.name).catch(() => null)));
+    if (account !== session || openDialogName !== 'friends') return;
+    document.querySelector('#friends-total').textContent = friends.length ? friends.length : '';
+    empty.textContent = 'No friends yet. Send a request with their username!';
+    empty.classList.toggle('hidden', friends.length > 0);
+    list.replaceChildren(...friends.map((friend, index) => {
+      const card = cards[index] || {};
+      const row = document.createElement('li');
+      row.className = 'maps-row friend-row';
+      const text = document.createElement('div');
+      const name = document.createElement('b');
+      name.textContent = card.username || friend.name;
+      name.classList.toggle('gold-name', goldAuraPlayers.includes(friend.name.toLowerCase()));
+      const note = document.createElement('small');
+      note.textContent = `${card.won || 0} win${card.won === 1 ? '' : 's'}${card.admin ? ' · Admin' : ''}`;
+      text.append(name, note);
+      const actions = document.createElement('div');
+      actions.className = 'maps-actions';
+      const remove = friendButton('Remove', { unfriend: friend.uid });
+      remove.className = 'text-button maps-delete';
+      actions.append(remove, friendButton('View', { view: friend.name }));
+      row.append(friendAvatar(card.picture, friend.name), text, actions);
+      return row;
+    }));
+  } catch (error) {
+    empty.textContent = error.message;
+  }
+}
+
+async function sendFriendRequest(event) {
+  event.preventDefault();
+  const error = document.querySelector('#friends-error');
+  const input = document.querySelector('#friend-name');
+  const name = input.value.trim();
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(name)) {
+    error.textContent = 'Usernames are 3 to 20 letters, numbers or _.';
+    return;
+  }
+  if (name.toLowerCase() === account.username.toLowerCase()) {
+    error.textContent = "That's you!";
+    return;
+  }
+  error.classList.remove('ok');
+  error.textContent = 'Sending…';
+  try {
+    const card = await window.UltraCloud.getProfile(name);
+    if (!card) {
+      error.textContent = `No player called "${name}".`;
+      return;
+    }
+    const friends = await window.UltraCloud.listFriends(account);
+    if (friends.some(friend => friend.uid === card.uid)) {
+      error.textContent = `${card.username} is already your friend.`;
+      return;
+    }
+    const outgoing = await window.UltraCloud.listRequests(account, 'outgoing');
+    if (outgoing.some(request => request.to === card.uid)) {
+      error.textContent = `You already sent ${card.username} a request.`;
+      return;
+    }
+    // If they already asked you, sending one back just accepts theirs.
+    const incoming = await window.UltraCloud.listRequests(account, 'incoming');
+    const theirs = incoming.find(request => request.from === card.uid);
+    if (theirs) {
+      await window.UltraCloud.acceptFriend(account, theirs);
+      error.classList.add('ok');
+      error.textContent = `You and ${card.username} are now friends!`;
+    } else {
+      await window.UltraCloud.sendFriendRequest(account, card.uid, card.username);
+      error.classList.add('ok');
+      error.textContent = `Friend request sent to ${card.username}.`;
+    }
+    input.value = '';
+    renderFriends();
+  } catch (problem) {
+    error.textContent = problem.kind === 'denied' ? 'You already sent them a request.' : problem.message;
+  }
+}
+
+async function answerRequest(button) {
+  const { request: action, from, to, name } = button.dataset;
+  button.disabled = true;
+  try {
+    if (action === 'accept') {
+      await window.UltraCloud.acceptFriend(account, { from, fromName: name });
+      document.querySelector('#friends-error').classList.add('ok');
+      document.querySelector('#friends-error').textContent = `You and ${name} are now friends!`;
+    } else if (action === 'decline') {
+      await window.UltraCloud.deleteRequest(account, from, account.uid);
+    } else {
+      await window.UltraCloud.deleteRequest(account, account.uid, to);
+    }
+    renderFriends();
+  } catch (error) {
+    document.querySelector('#friends-error').textContent = error.message;
+    button.disabled = false;
+  }
+}
+
+async function removeFriend(button) {
+  if (!button.dataset.confirm) {
+    button.dataset.confirm = 'yes';
+    button.textContent = 'Sure?';
+    return;
+  }
+  button.disabled = true;
+  try {
+    await window.UltraCloud.removeFriend(account, button.dataset.unfriend);
+    renderFriends();
+  } catch (error) {
+    document.querySelector('#friends-error').textContent = error.message;
+  }
+}
+
+async function viewFriend(name) {
+  const error = document.querySelector('#friends-error');
+  error.textContent = 'Loading profile…';
+  try {
+    const card = await window.UltraCloud.getProfile(name);
+    if (!card) {
+      error.textContent = `${name} hasn't set up a profile yet.`;
+      return;
+    }
+    let times = {};
+    try {
+      times = JSON.parse(card.times) || {};
+    } catch {
+      // No times to show.
+    }
+    error.textContent = '';
+    profileView = { ...card, times, played: null };
+    openDialog('profile');
+    renderProfile();
+  } catch (problem) {
+    error.textContent = problem.message;
+  }
+}
+
 function openAccount(view, firstLaunch = false) {
   accountFirstLaunch = firstLaunch;
   showAccountView(view);
@@ -2148,6 +2441,7 @@ async function submitAccount(event) {
     // A new account starts with whatever was played on this device; logging in brings the account's progress here.
     if (signup) await pushProgress();
     else await pullProgress(true);
+    watchFriendRequests();
     if (openDialogName === 'account') closeDialog();
   } catch (problem) {
     error.textContent = problem.message;

@@ -183,6 +183,62 @@
       return (body || []).filter(row => row.document).map(row => decode(row.document));
     },
 
+    // ---- Friends ----
+    async sendFriendRequest(session, toUid, toName) {
+      const token = await idToken(session);
+      await request(`${documentUrl(`requests/${session.uid}_${toUid}`)}?currentDocument.exists=false`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(encode({ from: session.uid, fromName: session.username, to: toUid, toName, createdAt: Date.now() }))
+      });
+    },
+    // Requests sent to me (incoming) or by me (outgoing).
+    async listRequests(session, direction) {
+      const token = await idToken(session);
+      const body = await request(`${endpoints.database}/projects/${config.projectId}/databases/(default)/documents:runQuery`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ structuredQuery: {
+          from: [{ collectionId: 'requests' }],
+          where: { fieldFilter: { field: { fieldPath: direction === 'incoming' ? 'to' : 'from' }, op: 'EQUAL', value: { stringValue: session.uid } } }
+        } })
+      });
+      return (body || []).filter(row => row.document).map(row => decode(row.document));
+    },
+    deleteRequest: (session, fromUid, toUid) => deleteDocument(session, `requests/${fromUid}_${toUid}`),
+    // Accepting writes both friends lists and removes the request, all at once.
+    async acceptFriend(session, requestDoc) {
+      const token = await idToken(session);
+      const root = `projects/${config.projectId}/databases/(default)/documents`;
+      const since = Date.now();
+      await request(`${endpoints.database}/${root}:commit`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ writes: [
+          { update: { name: `${root}/friends/${session.uid}/list/${requestDoc.from}`, ...encode({ uid: requestDoc.from, name: requestDoc.fromName, since }) } },
+          { update: { name: `${root}/friends/${requestDoc.from}/list/${session.uid}`, ...encode({ uid: session.uid, name: session.username, since }) } },
+          { delete: `${root}/requests/${requestDoc.from}_${session.uid}` }
+        ] })
+      });
+    },
+    async listFriends(session) {
+      const token = await idToken(session);
+      const body = await request(`${documentUrl(`friends/${session.uid}/list`)}?pageSize=300`, { headers: { Authorization: `Bearer ${token}` } });
+      return ((body && body.documents) || []).map(decode);
+    },
+    async removeFriend(session, otherUid) {
+      const token = await idToken(session);
+      const root = `projects/${config.projectId}/databases/(default)/documents`;
+      await request(`${endpoints.database}/${root}:commit`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ writes: [
+          { delete: `${root}/friends/${session.uid}/list/${otherUid}` },
+          { delete: `${root}/friends/${otherUid}/list/${session.uid}` }
+        ] })
+      });
+    },
+
     // For testing against Firebase's local emulators.
     useEmulator(host, projectId) {
       config.projectId = projectId;

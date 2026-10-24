@@ -1645,3 +1645,40 @@ body.legacy-mode .profile-card > .xp-titlebar { position: sticky; z-index: 1; to
 body.legacy-mode .profile-picture { width: 56px; height: 56px; font-size: 24px; }
 body.legacy-mode .profile-badges .badge-medal { width: 30px; height: 30px; }
 body.legacy-mode .profile-badges .badge-medal svg { width: 16px; height: 16px; }
+
+/* ==========================================================================
+   Friends
+   ========================================================================== */
+.friends-toggle { position: relative; }
+.friends-toggle .admin-toggle-icon { color: #8fe3a0; }
+.friends-title-icon { color: #8fe3a0; }
+.friends-alert { position: absolute; top: -6px; right: -6px; display: grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 99px; background: #ff4d5e; color: #fff; font-size: .68rem; font-weight: 800; box-shadow: 0 0 0 2px #10141c; }
+.friends-card { width: min(100%, 560px); }
+.friends-guest { margin-top: 12px; }
+.friends-guest .primary-button { width: auto; }
+.friend-row { grid-template-columns: auto 1fr auto; }
+.friend-avatar { position: relative; display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #9fdcff, #b681ff); color: #10131a; font: 700 1.1rem Sora, ui-sans-serif, system-ui, sans-serif; isolation: isolate; }
+.friend-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.friend-avatar.aura-gold { box-shadow: 0 0 0 3px #ffcc33, 0 0 12px #ffc93c99; }
+.friend-row .maps-actions .primary-button { width: auto; padding: 8px 14px; }
+.friend-row .maps-actions .secondary-button { padding: 8px 14px; }
+.friends-card .profile-label { margin-top: 16px; }
+@media (max-width: 600px) {
+  .friend-row { grid-template-columns: auto 1fr; }
+  .friend-row .maps-actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
+
+body.legacy-mode .friends-toggle .admin-toggle-icon, body.legacy-mode .friends-title-icon { color: #2c8a3c; }
+body.legacy-mode .friends-alert { top: -5px; right: -5px; border-radius: 2px; box-shadow: none; font: bold 10px Tahoma, sans-serif; }
+body.legacy-mode .friends-guest { margin-top: 0; }
+body.legacy-mode .friends-guest .primary-button { margin: 4px 0 0; }
+body.legacy-mode #friend-requests, body.legacy-mode #friends-list { border-top: 1px solid #919b9c; }
+body.legacy-mode .friend-avatar { width: 30px; height: 30px; border-radius: 0; background: linear-gradient(180deg, #3a6fd8, #1a3d9c); color: #fff; font: bold 14px Tahoma, sans-serif; }
+body.legacy-mode .friend-avatar img { border-radius: 0; }
+body.legacy-mode .friend-row .maps-actions .primary-button, body.legacy-mode .friend-row .maps-actions .secondary-button { min-width: 60px; margin: 0; padding: 2px 10px; }
+body.legacy-mode .friends-card .profile-label { margin-block: 10px 6px; }
+.friend-row > div:nth-child(2) { display: grid; min-width: 0; }
+.friend-row > div:nth-child(2) b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#friend-name { font-weight: 500; letter-spacing: 0; text-transform: none; }
+#friends-error.ok { color: #8fe3a0; }
+body.legacy-mode #friends-error.ok { color: #006400; }
