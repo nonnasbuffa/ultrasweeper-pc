@@ -925,8 +925,12 @@
       strafe /= length;
       const sin = Math.sin(player.yaw);
       const cos = Math.cos(player.yaw);
-      player.x += (-sin * forward + cos * strafe) * speed * dt;
-      player.z += (-cos * forward - sin * strafe) * speed * dt;
+      const moveX = -sin * forward + cos * strafe;
+      const moveZ = -cos * forward - sin * strafe;
+      player.x += moveX * speed * dt;
+      player.z += moveZ * speed * dt;
+      // He turns to face the way he runs; the camera stays wherever the player put it.
+      player.facing = Math.atan2(-moveX, -moveZ);
       const limitX = w.width / 2 + 7;
       const limitZ = w.height / 2 + 7;
       player.x = Math.min(limitX, Math.max(-limitX, player.x));
@@ -1000,8 +1004,8 @@
   function animateStickman(w, now, dt) {
     const { stick, player, anim } = w;
     const t = now / 1000;
-    // The body turns to face where the camera looks, snappier while swinging a tool.
-    if (!anim.lose) anim.yaw = turnToward(anim.yaw, player.yaw, Math.min(1, dt * (anim.action ? 30 : 12)));
+    // The camera orbits freely, so the body follows his own facing (the camera's only in first person).
+    if (!anim.lose) anim.yaw = turnToward(anim.yaw, w.firstPerson ? player.yaw : player.facing, Math.min(1, dt * (anim.action ? 30 : 12)));
     stick.root.position.set(player.x, player.y, player.z);
     stick.root.rotation.y = anim.yaw;
     let pose;
@@ -1080,7 +1084,7 @@
       if (!w.follow) w.follow = head.clone();
       w.follow.lerp(head, 1 - Math.exp(-dt * 14));
       const distance = (w.touch ? 2.9 : 2.5) + down * 3;
-      camera.position.copy(w.follow).addScaledVector(direction, -distance).addScaledVector(right, (w.touch ? 0.5 : 0.95) - down * 0.4);
+      camera.position.copy(w.follow).addScaledVector(direction, -distance).addScaledVector(right, (w.touch ? 0.35 : 0.55) - down * 0.3);
       camera.position.y += 0.1 + down * 2;
       camera.position.y = Math.max(camera.position.y, groundAt(w, camera.position.x, camera.position.z) + 0.25);
     }
@@ -1126,7 +1130,9 @@
     void slot.offsetWidth;
     slot.classList.add('used');
     w.anim.action = { tool, t: 0 };
-    w.anim.yaw = w.player.yaw;
+    // Turn toward the tile being worked on.
+    if (w.target >= 0) w.player.facing = Math.atan2(-(tileX(w, w.target) - w.player.x), -(tileZ(w, w.target) - w.player.z));
+    else w.player.facing = w.player.yaw;
     const impact = w.options.motion() ? (tool === 'dig' ? digImpact : plantImpact) : 0;
     w.pending = { tool, index: w.target, at: performance.now() + impact * 1000 };
   }
@@ -1393,7 +1399,7 @@
     w.intro = intro;
     w.pending = null;
     w.tipShown = false;
-    w.anim = { yaw: player ? player.yaw : 0, action: null, lose: null, landT: 0, airT: 0, winT: 0, stepSide: false };
+    w.anim = { yaw: player ? player.facing : 0, action: null, lose: null, landT: 0, airT: 0, winT: 0, stepSide: false };
     w.options = options;
     w.container = container;
     w.size = [0, 0];
@@ -1406,6 +1412,7 @@
     w.player.x = Math.min(w.width / 2 + 7, Math.max(-w.width / 2 - 7, w.player.x));
     w.player.z = Math.min(w.height / 2 + 7, Math.max(-w.height / 2 - 7, w.player.z));
     w.player.running = false;
+    if (w.player.facing === undefined) w.player.facing = w.player.yaw;
     // Each new match he drops in from the sky.
     if (intro && options.motion()) {
       w.player.y += 5;
