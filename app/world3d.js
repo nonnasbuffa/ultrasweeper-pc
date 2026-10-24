@@ -206,10 +206,11 @@
     }
   }
 
-  // ---- The stickman, drawn like Eraser's: skinny ink-line limbs and a big round white head with a thick outline and a band.
+  // ---- The stickman, doodled like Eraser's: limbs are pen strokes (thin at the ends, a little uneven)
+  // and the head is a sketched circle that always faces the camera, like a drawing on paper.
   // Built facing -z with his right hand on +x. Arms and legs are two pieces each, so elbows and knees bend.
   function buildStickman(look, legacy) {
-    const radius = 0.03;
+    const radius = 0.032;
     const line = 0;
     const fill = new THREE.MeshBasicMaterial({ color: look.stick });
     const ink = new THREE.MeshBasicMaterial({ color: look.ink, side: THREE.BackSide });
@@ -222,7 +223,7 @@
       if (line) group.add(new THREE.Mesh(shape(line), ink));
       return group;
     };
-    const capsule = length => inked(extra => new THREE.CapsuleGeometry(radius + extra, length, 4, 10));
+    const capsule = length => inked(() => strokeGeometry(radius, length));
     const limb = (parent, x, y, upper, lower) => {
       const top = new THREE.Group();
       top.position.set(x, y, 0);
@@ -254,14 +255,12 @@
     // The head floats just above the body, the way stick figures are drawn.
     const head = new THREE.Group();
     head.position.y = 0.73;
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.23, 20, 14), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
-    skull.castShadow = true;
-    const rim = new THREE.Mesh(new THREE.SphereGeometry(0.23 + (legacy ? 0.03 : 0.038), 20, 14), ink);
-    // One slanted line across the head.
-    const band = new THREE.Mesh(new THREE.TorusGeometry(0.232, 0.02, 6, 28), new THREE.MeshBasicMaterial({ color: look.ink }));
-    band.rotation.set(Math.PI / 2 - 0.2, 0.35, 0);
-    band.position.y = 0.04;
-    head.add(skull, rim, band);
+    const sketch = new THREE.Sprite(new THREE.SpriteMaterial({ map: headTexture(legacy ? '#000000' : '#0b0e15', legacy ? null : look.stick), transparent: true }));
+    sketch.scale.set(0.6, 0.6, 1);
+    // A plain ball inside the drawing, only so the head still casts a round shadow.
+    const shadowCaster = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false }));
+    shadowCaster.castShadow = true;
+    head.add(sketch, shadowCaster);
     torso.add(head);
     const legs = [limb(hips, -0.07, 0, 0.42, 0.42), limb(hips, 0.07, 0, 0.42, 0.42)];
     const arms = [limb(torso, -0.05, 0.45, 0.3, 0.3), limb(torso, 0.05, 0.45, 0.3, 0.3)];
@@ -297,6 +296,71 @@
     arms[0].end.add(flag);
 
     return { root, body, hips, torso, head, legs, arms, shovel, flag };
+  }
+
+  // A pen stroke: an even line with round tips, slightly uneven along its length and a little different each time.
+  function strokeGeometry(radius, length) {
+    const points = [];
+    const total = length + radius * 2;
+    const steps = 14;
+    const weight = 0.9 + Math.random() * 0.25;
+    const wobble = Math.random() * Math.PI * 2;
+    for (let i = 0; i <= steps; i += 1) {
+      const t = i / steps;
+      // Round caps: full width everywhere except the last radius at each end.
+      const fromEnd = Math.min(t, 1 - t) * total;
+      const cap = fromEnd >= radius ? 1 : Math.sqrt(Math.max(0, 1 - ((radius - fromEnd) / radius) ** 2));
+      const unevenness = 1 + Math.sin(t * 6 + wobble) * 0.1;
+      points.push(new THREE.Vector2(Math.max(0.0001, radius * weight * cap * unevenness), -total / 2 + t * total));
+    }
+    return new THREE.LatheGeometry(points, 8);
+  }
+
+  // The head: a wobbly white circle traced twice in ink, with a slanted band, the way you'd scribble it.
+  function headTexture(ink, glow) {
+    return canvasTexture(256, (ctx, size) => {
+      const c = size / 2;
+      const loop = (radius, jitter, turns = 1, start = 0) => {
+        ctx.beginPath();
+        const steps = 48 * turns;
+        for (let i = 0; i <= steps; i += 1) {
+          const a = start + (i / 48) * Math.PI * 2;
+          const r = radius + Math.sin(a * 3 + jitter) * 3 + Math.sin(a * 5 + jitter * 2) * 1.5;
+          const x = c + Math.cos(a) * r;
+          const y = c + Math.sin(a) * r;
+          if (i) ctx.lineTo(x, y);
+          else ctx.moveTo(x, y);
+        }
+      };
+      if (glow) {
+        ctx.shadowColor = glow;
+        ctx.shadowBlur = 10;
+      }
+      loop(92, 0.4);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = ink;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 11;
+      loop(94, 1.3, 1.08, -0.4);
+      ctx.stroke();
+      ctx.lineWidth = 4;
+      loop(99, 2.6, 0.55, 2.1);
+      ctx.stroke();
+      // The band: two quick strokes across the head.
+      ctx.lineWidth = 9;
+      ctx.beginPath();
+      ctx.moveTo(c - 92, c - 6);
+      ctx.quadraticCurveTo(c, c - 34, c + 94, c - 44);
+      ctx.stroke();
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(c - 80, c + 8);
+      ctx.quadraticCurveTo(c + 4, c - 18, c + 86, c - 28);
+      ctx.stroke();
+    });
   }
 
   // ---- Poses. Angles in radians: +x on a hip or shoulder swings the limb forward, a negative knee bends the shin back,
@@ -989,11 +1053,7 @@
         if (action.t >= (action.tool === 'dig' ? digTime : plantTime)) anim.action = null;
       }
     }
-    anim.drawClock = (anim.drawClock || 0) + dt;
-    if (anim.drawClock >= 1 / 15 || anim.action || anim.lose) {
-      anim.drawClock = 0;
-      applyPose(stick, pose);
-    }
+    applyPose(stick, pose);
     stick.body.position.y = lift;
     stick.body.rotation.set(tumble, spin, 0);
     // In first person the camera sits inside the head, so the body would only get in the way.
@@ -1091,7 +1151,8 @@
           <li><b>Mouse</b> look around</li>
           <li><b>Left click</b> shovel: dig a tile</li>
           <li><b>Right click</b> flag: mark a mine</li>
-          <li><b>R</b> new game · <b>V</b> camera · <b>Esc</b> free the mouse</li>
+          <li><b>R</b> new game · <b>V</b> camera</li>
+          <li><b>Esc</b> switches between moving the camera and using the mouse</li>
         </ul>`;
   const touchHelp = `<ul>
           <li><b>Left stick</b> walk (push all the way to run)</li>
@@ -1100,7 +1161,7 @@
           <li><b>View</b> switches the camera</li>
         </ul>`;
 
-  // The controls card shows up the first time only; after that it's just a small "Click to play".
+  // The controls card shows up during the first 3D match only, then fades away by itself.
   function helpSeen() {
     try {
       return localStorage.getItem(helpKey) === 'seen';
@@ -1115,8 +1176,7 @@
     } catch {
       // Private mode: it will just show again next time.
     }
-    w.hud.start.classList.add('compact');
-    w.hud.start.innerHTML = `<span>${w.touch ? 'Tap to start' : 'Click to play'}</span>`;
+    w.hud.start.classList.add('hidden');
   }
 
   function buildHud(w) {
@@ -1129,11 +1189,11 @@
         <button type="button" data-tool="dig" aria-label="Shovel">${shovelIcon}<span>${w.touch ? 'Dig' : 'Left click'}</span></button>
         <button type="button" data-tool="flag" aria-label="Flag">${flagIcon}<span>${w.touch ? 'Flag' : 'Right click'}</span></button>
       </div>
-      <div class="world3d-start ${full ? '' : 'compact'} ${w.touch && !full ? 'hidden' : ''}">
-        ${full ? '<strong>3D Mode</strong>' : ''}
-        <span>${w.touch ? 'Tap to start' : 'Click to play'}</span>
-        ${full ? (w.touch ? touchHelp : desktopHelp) : ''}
+      <div class="world3d-start ${full ? '' : 'hidden'}" aria-live="polite">
+        <strong>3D Mode</strong>
+        ${w.touch ? touchHelp : desktopHelp}
       </div>
+      <div class="world3d-mouse hidden">Press <b>Esc</b> to move the camera</div>
       <div class="world3d-tip hidden">${w.touch ? 'Tap the face for a new game' : 'Press <b>R</b> for a new game'}</div>
       ${w.touch ? '<div class="world3d-stick"><i></i></div><button type="button" class="world3d-jump" aria-label="Jump">Jump</button><button type="button" class="world3d-view" aria-label="Switch camera">View</button>' : ''}`;
     w.container.append(root);
@@ -1142,10 +1202,20 @@
       hotbar: root.querySelector('.world3d-hotbar'),
       start: root.querySelector('.world3d-start'),
       tip: root.querySelector('.world3d-tip'),
+      mouse: root.querySelector('.world3d-mouse'),
       stick: root.querySelector('.world3d-stick'),
       jump: root.querySelector('.world3d-jump'),
       view: root.querySelector('.world3d-view')
     };
+  }
+
+  function grabMouse() {
+    try {
+      const request = renderer.domElement.requestPointerLock();
+      if (request && request.catch) request.catch(() => {});
+    } catch {
+      // Not allowed right now; the Esc hint stays up.
+    }
   }
 
   function bindControls(w) {
@@ -1175,27 +1245,21 @@
     });
     on(window, 'blur', () => { w.keys = {}; });
 
-    const grabMouse = () => {
-      try {
-        const request = canvas.requestPointerLock();
-        if (request && request.catch) request.catch(() => {});
-      } catch {
-        // Some browsers refuse; the prompt just stays up.
-      }
-    };
-    if (w.touch) {
-      on(w.hud.start, 'click', () => {
-        w.hud.start.classList.add('hidden');
-        markHelpSeen(w);
-      });
-    } else {
-      on(w.hud.start, 'click', grabMouse);
+    if (!w.hud.start.classList.contains('hidden')) {
+      const timer = window.setTimeout(() => markHelpSeen(w), 9000);
+      w.unbind.push(() => window.clearTimeout(timer));
+    }
+    if (!w.touch) {
+      // Clicking the world also works, for browsers where Esc can't capture the mouse.
       on(canvas, 'click', () => { if (!locked()) grabMouse(); });
       on(document, 'pointerlockchange', () => {
-        w.hud.start.classList.toggle('hidden', locked());
-        if (locked() && !w.hud.start.classList.contains('compact')) markHelpSeen(w);
-        if (locked() && document.activeElement instanceof HTMLElement) document.activeElement.blur();
-        if (!locked()) w.keys = {};
+        if (!locked()) {
+          w.unlockedAt = performance.now();
+          w.keys = {};
+        } else if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        w.hud.mouse.classList.toggle('hidden', locked());
       });
       on(document, 'mousemove', event => {
         if (locked()) turn(event.movementX, event.movementY, 0.0022);
@@ -1374,7 +1438,7 @@
     if (!options.getGame()) return;
     world = makeWorld(options, container, sameBoard ? player : null, newMatch);
     world.firstPerson = firstPerson;
-    if (locked) world.hud.start.classList.add('hidden');
+    if (!world.touch) world.hud.mouse.classList.toggle('hidden', locked);
     world.raf = requestAnimationFrame(frame);
   }
 
@@ -1411,6 +1475,10 @@
       container.prepend(renderer.domElement);
       world = makeWorld(options, container, null, true);
       world.raf = requestAnimationFrame(frame);
+      if (!world.touch) {
+        world.hud.mouse.classList.remove('hidden');
+        grabMouse();
+      }
     },
     stop() {
       startTicket += 1;
@@ -1421,6 +1489,18 @@
     },
     // For automated checks: the live world, and a way to swing a tool without a mouse.
     debug: { world: () => world, use: tool => world && useTool(world, tool) },
+    // Esc in 3D Mode: capture the mouse to steer the camera, or free it to click buttons.
+    // The desktop app calls this itself when Esc is pressed, which is what lets the page capture the mouse.
+    escape() {
+      if (!world || world.touch || !world.options.canPlay()) return;
+      if (document.pointerLockElement === renderer.domElement) {
+        document.exitPointerLock();
+        return;
+      }
+      // This same Esc press already freed the mouse.
+      if (performance.now() - (world.unlockedAt || 0) < 400) return;
+      grabMouse();
+    },
     releaseMouse() {
       if (renderer && document.pointerLockElement === renderer.domElement) document.exitPointerLock();
     }

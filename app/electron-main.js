@@ -43,6 +43,13 @@ const createWindow = () => {
   // Ctrl+scroll / pinch would fight the automatic scaling.
   window.webContents.setVisualZoomLevelLimits(1, 1);
 
+  // 3D Mode: Esc switches the mouse between steering the camera and clicking buttons. It's run from here because
+  // a page may only capture the mouse right after the player's own input, and Esc itself doesn't count inside the page.
+  window.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || input.key !== 'Escape' || input.isAutoRepeat) return;
+    window.webContents.executeJavaScript('window.Ultra3D && window.Ultra3D.escape()', true).catch(() => {});
+  });
+
   window.loadFile(path.join(__dirname, 'index.html'));
 };
 

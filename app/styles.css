@@ -1724,15 +1724,18 @@ body.legacy-mode .world3d-hotbar [data-tool="dig"] svg { color: #6b4a1f; }
 body.legacy-mode .world3d-hotbar [data-tool="flag"] svg { color: #e00000; }
 body.legacy-mode .world3d-hotbar button.used { animation: none; }
 
-.world3d-start { position: absolute; top: 56%; left: 50%; display: grid; justify-items: center; gap: 10px; width: min(340px, calc(100vw - 32px)); padding: 20px 22px; border: 1px solid #2c3544; border-radius: 18px; background: #111823e8; color: #e5edf9; text-align: center; translate: -50% -50%; cursor: pointer; pointer-events: auto; box-shadow: 0 18px 45px #0006; }
+.world3d-start { position: absolute; top: 58%; left: 50%; animation: help-fade 9s ease both; display: grid; justify-items: center; gap: 10px; width: min(340px, calc(100vw - 32px)); padding: 20px 22px; border: 1px solid #2c3544; border-radius: 18px; background: #111823e8; color: #e5edf9; text-align: center; translate: -50% -50%; pointer-events: none; box-shadow: 0 18px 45px #0006; }
+@keyframes help-fade { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+.world3d-mouse { position: absolute; top: calc(50% + 34px); left: 50%; padding: 6px 14px; border-radius: 999px; background: #0b0e15b8; color: #e5edf9; font-size: .85rem; font-weight: 700; white-space: nowrap; translate: -50% 0; }
+.world3d-mouse b { color: #5cf0d0; }
+body.legacy-mode .world3d-mouse { border: 1px solid #000; border-radius: 3px; background: #ffffe1; color: #000; font: 12px Tahoma, Verdana, sans-serif; }
+body.legacy-mode .world3d-mouse b { color: #000; }
 .world3d-start strong { font-size: 1.35rem; }
-.world3d-start > span { padding: 7px 16px; border-radius: 999px; background: #5cf0d0; color: #062019; font-weight: 800; animation: start-pulse 1.6s ease-in-out infinite; }
 @keyframes start-pulse { 50% { box-shadow: 0 0 0 7px #5cf0d033; } }
 .world3d-start ul { display: grid; gap: 5px; margin: 4px 0 0; padding: 0; color: #aeb9c9; font-size: .82rem; list-style: none; }
 .world3d-start b { color: #e5edf9; }
-body.legacy-mode .world3d-start { border: 1px solid #000; border-radius: 3px; background: #ffffe1; color: #000; font: 12px Tahoma, Verdana, sans-serif; box-shadow: 2px 2px 0 #0004; }
+body.legacy-mode .world3d-start { border: 1px solid #000; border-radius: 3px; background: #ffffe1; color: #000; font: 12px Tahoma, Verdana, sans-serif; box-shadow: 2px 2px 0 #0004; animation: none; }
 body.legacy-mode .world3d-start strong { font-size: 14px; }
-body.legacy-mode .world3d-start > span { border: 1px solid #003c74; border-radius: 3px; background: linear-gradient(#fff, #ece9d8); color: #000; font-weight: 400; animation: none; }
 body.legacy-mode .world3d-start ul, body.legacy-mode .world3d-start b { color: #000; }
 
 /* Phones: stick on the left, tools on the right. */
@@ -1750,10 +1753,9 @@ body.legacy-mode .world3d-start ul, body.legacy-mode .world3d-start b { color: #
 body.legacy-mode .world3d-stick { border-color: #003c74; background: #ffffff55; }
 body.legacy-mode .world3d-stick i { background: linear-gradient(#fff, #ece9d8); border: 1px solid #003c74; }
 body.legacy-mode .world3d-jump, body.legacy-mode .world3d-view { border: 1px solid #003c74; background: linear-gradient(#fff, #ece9d8); color: #000; font: 11px Tahoma, Verdana, sans-serif; }
-.world3d-start.compact { width: auto; padding: 0; border: 0; background: none; box-shadow: none; }
-body.legacy-mode .world3d-start.compact { border: 0; background: none; box-shadow: none; }
 .world3d-tip { position: absolute; bottom: calc(96px + var(--safe-bottom, 0px)); left: 50%; padding: 7px 16px; border-radius: 999px; background: #0b0e15cc; color: #e5edf9; font-weight: 700; white-space: nowrap; translate: -50% 0; animation: rise-in .4s var(--ease-out, ease-out) both; }
 .world3d-tip b { color: #5cf0d0; }
 .touch-device .world3d-tip { top: 40%; bottom: auto; }
 body.legacy-mode .world3d-tip { border: 1px solid #000; border-radius: 3px; background: #ffffe1; color: #000; font: 12px Tahoma, Verdana, sans-serif; animation: none; }
 body.legacy-mode .world3d-tip b { color: #000; }
+.world3d-start:not(.hidden) ~ .world3d-mouse { display: none; }
