@@ -12,7 +12,10 @@ const dialogs = {
   tutorial: document.querySelector('#tutorial-screen'),
   options: document.querySelector('#options-screen'),
   account: document.querySelector('#account-screen'),
-  profile: document.querySelector('#profile-screen')
+  profile: document.querySelector('#profile-screen'),
+  maps: document.querySelector('#maps-screen'),
+  mapNew: document.querySelector('#map-new-screen'),
+  mapDone: document.querySelector('#map-done-screen')
 };
 
 const boardElement = document.querySelector('#board');
@@ -87,7 +90,8 @@ let tutorialStep = 0;
 const accountStorageKey = 'offline-minesweeper-account-v1';
 const syncStorageKey = 'offline-minesweeper-sync-v1';
 const profileStorageKey = 'offline-minesweeper-profile-v1';
-const syncedKeys = [profileStorageKey, statsStorageKey, legacyStorageKey, accentStorageKey, musicStorageKey, volumeStorageKey, tutorialStorageKey];
+const badgesStorageKey = 'offline-minesweeper-badges-v1';
+const syncedKeys = [badgesStorageKey, profileStorageKey, statsStorageKey, legacyStorageKey, accentStorageKey, musicStorageKey, volumeStorageKey, tutorialStorageKey];
 const accountButton = document.querySelector('#profile-account');
 const bioInput = document.querySelector('#profile-bio');
 // Profile picture and bio; they travel with the account like the stats do.
@@ -95,6 +99,28 @@ let profile = loadProfile();
 // Someone else's profile being looked at, or null for your own.
 let profileView = null;
 let platinumTimer = null;
+// Pop-ups waiting their turn (badges can arrive several at once).
+const toastQueue = [];
+let toastShowing = false;
+let adminToastArt = '';
+// Badges: earned once, kept with the account. "test" ones are checked from the stats after every game.
+const badgeList = [
+  { id: 'first-win', name: 'First Sweep', description: 'Win your first game.', color: '#4cc77f', glyph: 'flag', test: s => s.won >= 1 },
+  { id: 'wins-10', name: 'Sweeper', description: 'Win 10 games.', color: '#4fa8ff', glyph: 'star', test: s => s.won >= 10 },
+  { id: 'wins-100', name: 'Veteran', description: 'Win 100 games.', color: '#a56bff', glyph: 'crown', test: s => s.won >= 100 },
+  { id: 'quick', name: 'Quick Hands', description: 'Win Beginner in under 30 seconds.', color: '#ff9d4d', glyph: 'bolt', test: s => s.beginnerBest < 30 },
+  { id: 'lightning', name: 'Lightning', description: 'Win Beginner in under 10 seconds.', color: '#f2c200', glyph: 'bolt', test: s => s.beginnerBest < 10 },
+  { id: 'medium', name: 'Getting Serious', description: 'Win a Medium game.', color: '#2fc4b2', glyph: 'mine', test: s => s.wonOn('16x16x40') },
+  { id: 'hard', name: 'Hard Hat', description: 'Win a Hard game.', color: '#ff6b6b', glyph: 'mine', test: s => s.wonOn('30x16x99') },
+  { id: 'insane', name: 'Insane!', description: 'Win an Insane game.', color: '#e0457b', glyph: 'flame', test: s => s.wonOn('30x24x180') },
+  { id: 'on-fire', name: 'On Fire', description: 'Win 5 games in a row.', color: '#ff6a2b', glyph: 'flame', test: s => s.bestStreak >= 5 },
+  { id: 'mapmaker', name: 'Mapmaker', description: 'Publish an online map.', color: '#38b6ff', glyph: 'globe' },
+  { id: 'explorer', name: 'Explorer', description: "Clear another player's online map.", color: '#7bd44a', glyph: 'globe' }
+];
+let badges = loadBadges();
+// Online maps: the list being shown, and the order it's sorted in.
+let mapsOrder = 'createdAt';
+const mapCodeLetters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 // This username gets the gold aura on its profile.
 const goldAuraPlayers = ['aski650'];
 // null = not asked yet, { guest: true }, or a signed-in player { username, uid, refreshToken }.
@@ -167,6 +193,8 @@ runLoadingScreen();
 updateClock();
 window.setInterval(updateClock, 15000);
 updateAccountUi();
+adminToastArt = document.querySelector('#platinum .platinum-art').innerHTML;
+checkBadges(true);
 pullProgress();
 
 document.querySelector('#normal-game').addEventListener('click', () => startGame(9, 9, 10));
@@ -189,12 +217,25 @@ document.querySelector('#custom-form').addEventListener('input', markPreset);
 document.querySelector('#duel-game').addEventListener('click', () => openDuelDialog());
 document.querySelector('#duel-form').addEventListener('submit', startDuelSetup);
 duelPrimary.addEventListener('click', () => {
-  if (game.duel === 'setup') finishDuelSetup();
-  else openDuelDialog();
+  if (game.duel === 'setup') {
+    if (game.map) publishMap();
+    else finishDuelSetup();
+  } else if (game.map) {
+    openMaps();
+  } else {
+    openDuelDialog();
+  }
 });
 duelSecondary.addEventListener('click', () => {
-  if (game.duel === 'setup') startGame(game.width, game.height, 0, 'setup');
-  else restartGame();
+  if (game.duel === 'setup') {
+    const map = game.map;
+    startGame(game.width, game.height, 0, 'setup');
+    game.map = map;
+    showDuelStatus();
+    applyDuelUi();
+  } else {
+    restartGame();
+  }
 });
 document.querySelector('#pass-start').addEventListener('click', closeDialog);
 document.querySelector('#pass-back').addEventListener('click', () => {
@@ -233,6 +274,48 @@ document.querySelector('#menu-appearance').addEventListener('click', openAppeara
 document.querySelector('#menu-help').addEventListener('click', () => openTutorial(false));
 document.querySelector('#menu-options').addEventListener('click', () => openDialog('options'));
 document.querySelector('#menu-profile').addEventListener('click', openProfile);
+document.querySelector('#menu-maps').addEventListener('click', openMaps);
+document.querySelector('#maps-code-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const code = document.querySelector('#maps-code').value.trim().toUpperCase();
+  if (!/^[A-Z0-9]{6}$/.test(code)) {
+    document.querySelector('#maps-error').textContent = 'Map codes are 6 letters and numbers.';
+    return;
+  }
+  playMap(code);
+});
+document.querySelector('.maps-tabs').addEventListener('click', event => {
+  const tab = event.target.closest('[data-order]');
+  if (!tab) return;
+  mapsOrder = tab.dataset.order;
+  loadMapList();
+});
+document.querySelector('#maps-list').addEventListener('click', event => {
+  const play = event.target.closest('[data-play]');
+  if (play) playMap(play.dataset.play);
+  const remove = event.target.closest('[data-delete]');
+  if (remove) deleteMap(remove);
+});
+document.querySelector('#maps-create').addEventListener('click', () => {
+  if (!signedIn()) {
+    openAccount('choice');
+    return;
+  }
+  document.querySelector('#map-new-error').textContent = '';
+  openDialog('mapNew');
+});
+document.querySelector('#map-new-form').addEventListener('submit', startMapMaker);
+document.querySelector('#map-done-copy').addEventListener('click', copyMapCode);
+document.querySelector('#map-done-maps').addEventListener('click', openMaps);
+document.querySelector('#profile-badges').addEventListener('click', event => {
+  const medal = event.target.closest('[data-badge]');
+  if (!medal) return;
+  const badge = badgeList.find(item => item.id === medal.dataset.badge);
+  const when = badges[badge.id];
+  document.querySelector('#profile-badge-info').textContent = when
+    ? `${badge.name}: ${badge.description} Earned ${new Date(when).toLocaleDateString([], { dateStyle: 'medium' })}.`
+    : `${badge.name} (locked): ${badge.description}`;
+});
 document.querySelector('#profile-add-admin').addEventListener('click', openAdminDialog);
 document.querySelector('#platinum').addEventListener('click', hidePlatinum);
 accountButton.addEventListener('click', clickAccountButton);
@@ -890,9 +973,11 @@ function restartGame() {
   if (game.duel === 'setup') {
     startGame(game.width, game.height, 0, 'setup');
   } else if (game.duel) {
-    // Player 2 tries the same board again.
+    // Player 2 (or the online map's player) tries the same board again.
     const layout = game.layout;
+    const map = game.map;
     startGame(game.width, game.height, layout.length, 'play');
+    game.map = map;
     hideDuelMines(layout);
   } else {
     startGame(game.width, game.height, game.mines);
@@ -934,7 +1019,8 @@ function toggleDuelMine(index) {
 function showDuelStatus() {
   const count = game.mines;
   statusElement.className = 'game-status';
-  statusElement.textContent = count ? `Player 1: ${count} mine${count === 1 ? '' : 's'} hidden. Tap Done when you're ready.` : 'Player 1: tap tiles to hide your mines.';
+  if (game.map) statusElement.textContent = count ? `${count} mine${count === 1 ? '' : 's'} placed. Tap Publish when your map is ready.` : 'Tap tiles to place the mines for your map.';
+  else statusElement.textContent = count ? `Player 1: ${count} mine${count === 1 ? '' : 's'} hidden. Tap Done when you're ready.` : 'Player 1: tap tiles to hide your mines.';
 }
 
 function finishDuelSetup() {
@@ -957,7 +1043,7 @@ function hideDuelMines(layout) {
     tile.adjacent = neighbors(index).filter(next => game.tiles[next].mine).length;
   });
   refreshGameAppearance();
-  setStatus('Player 2: clear the board without hitting a mine!');
+  setStatus(game.map ? `${game.map.name} by ${game.map.author}: clear it without hitting a mine!` : 'Player 2: clear the board without hitting a mine!');
   applyDuelUi();
 }
 
@@ -966,7 +1052,8 @@ function applyDuelUi() {
   const over = Boolean(game && game.duel && game.ended);
   duelBar.classList.toggle('hidden', !setup && !over);
   duelSecondary.textContent = setup ? 'Clear' : 'Try again';
-  duelPrimary.textContent = setup ? 'Done, pass it on' : 'New match';
+  if (game && game.map) duelPrimary.textContent = setup ? 'Publish map' : 'Back to maps';
+  else duelPrimary.textContent = setup ? 'Done, pass it on' : 'New match';
   arenaElement.classList.toggle('duel-setup', setup);
   gameHint.textContent = setup ? 'Tap a tile to hide a mine there, tap it again to remove it' : normalHint;
   // The bar changes the game's height, so refit it to the window.
@@ -1209,7 +1296,7 @@ function loseGame(explodedIndex) {
   paintTile(explodedIndex, tileButtons[explodedIndex], 'anim-mine', 0);
   if (motionEnabled()) boardElement.classList.add('shake');
   boardElement.classList.add('lost');
-  setStatus(game.duel ? "Boom! Player 1's trap worked." : 'Game over. Try again?', 'lose');
+  setStatus(game.map ? `Boom! ${game.map.author}'s map got you.` : game.duel ? "Boom! Player 1's trap worked." : 'Game over. Try again?', 'lose');
   updateHud();
   applyDuelUi();
 }
@@ -1229,11 +1316,13 @@ function checkWin() {
   boardElement.classList.add('won');
   const time = elapsedSeconds();
   if (game.duel) {
-    setStatus(`Player 2 cleared the board in ${formatTime(time)}!`, 'win');
+    setStatus(game.map ? `You cleared ${game.map.name} in ${formatTime(time)}!` : `Player 2 cleared the board in ${formatTime(time)}!`, 'win');
+    if (game.map && !(signedIn() && game.map.authorUid === account.uid)) awardBadge('explorer');
     applyDuelUi();
     return;
   }
   const record = recordResult(true, time);
+  checkBadges();
   let message = `You cleared the board in ${formatTime(time)}!`;
   if (record.rank === 0) message = `New best time: ${formatTime(time)}!`;
   else if (record.rank > 0) message = `Cleared in ${formatTime(time)}, #${record.rank + 1} on the leaderboard!`;
@@ -1544,6 +1633,8 @@ function applyProgress(cloud) {
 function reloadProgress() {
   stats = loadStats();
   profile = loadProfile();
+  badges = loadBadges();
+  checkBadges(true);
   if (openDialogName === 'profile') renderProfile();
   legacyMode = storageGet(legacyStorageKey) === 'true';
   accentColor = storageGet(accentStorageKey) || defaultAccent;
@@ -1579,10 +1670,12 @@ function logOut() {
   applyingCloud = true;
   storageRemove(statsStorageKey);
   storageRemove(profileStorageKey);
+  storageRemove(badgesStorageKey);
   applyingCloud = false;
   saveSyncInfo({ updatedAt: 0, dirty: false });
   stats = loadStats();
   profile = loadProfile();
+  badges = loadBadges();
   syncState = 'saved';
   updateAccountUi();
 }
@@ -1661,7 +1754,7 @@ function publicStats() {
 
 async function publishMyProfile(session) {
   const mine = publicStats();
-  const card = { username: session.username, picture: profile.picture, bio: profile.bio, won: mine.won, bestStreak: mine.bestStreak, times: JSON.stringify(mine.times), admin: Boolean(session.admin) };
+  const card = { username: session.username, picture: profile.picture, bio: profile.bio, won: mine.won, bestStreak: mine.bestStreak, times: JSON.stringify(mine.times), badges: Object.keys(badges).join(','), admin: Boolean(session.admin) };
   try {
     await window.UltraCloud.publishProfile(session, card);
   } catch (error) {
@@ -1744,6 +1837,7 @@ function renderProfile() {
   accountButton.classList.toggle('hidden', viewing);
   document.querySelector('#profile-remove-picture').classList.toggle('hidden', viewing || !profile.picture);
   document.querySelector('#profile-add-admin').classList.toggle('hidden', viewing || !signedIn() || Boolean(account.admin) || !adminState.unlocked);
+  renderBadges();
 }
 
 // Shrinks the picked image to a small square, so it's light enough to save with the account.
@@ -1773,6 +1867,232 @@ function usePicture(file) {
     error.textContent = "Couldn't open that picture. Try a JPG or PNG.";
   };
   image.src = url;
+}
+
+// ---- Badges ----
+function loadBadges() {
+  try {
+    const stored = JSON.parse(storageGet(badgesStorageKey));
+    return stored && typeof stored === 'object' ? stored : {};
+  } catch {
+    return {};
+  }
+}
+
+function badgeMedal(badge, earned = true) {
+  return `<span class="badge-medal${earned ? '' : ' locked'}" style="--badge: ${badge.color}"><svg><use href="#badge-${badge.glyph}" /></svg></span>`;
+}
+
+// Hands out every badge the stats already qualify for. Quiet = no pop-ups (used at launch and after logging in).
+function checkBadges(quiet = false) {
+  const boards = stats.boards;
+  const beginner = boards['9x9x10'];
+  const summary = {
+    ...publicStats(),
+    beginnerBest: beginner && beginner.times.length ? beginner.times[0].time : Infinity,
+    wonOn: key => Boolean(boards[key] && boards[key].won)
+  };
+  badgeList.forEach(badge => {
+    if (badge.test && !badges[badge.id] && badge.test(summary)) awardBadge(badge.id, quiet);
+  });
+}
+
+function awardBadge(id, quiet = false) {
+  if (badges[id]) return;
+  const badge = badgeList.find(item => item.id === id);
+  badges[id] = Date.now();
+  storageSet(badgesStorageKey, JSON.stringify(badges));
+  if (openDialogName === 'profile') renderBadges();
+  if (quiet) return;
+  queueToast({
+    kind: 'badge',
+    art: badgeMedal(badge),
+    kicker: 'You earned a badge!',
+    title: badge.name,
+    icon: false,
+    sub: badge.description,
+    sound: [783.99, 1174.66]
+  });
+}
+
+function renderBadges() {
+  const earned = badgeList.filter(badge => badges[badge.id]).length;
+  document.querySelector('#profile-badge-count').textContent = `${earned}/${badgeList.length}`;
+  document.querySelector('#profile-badges').innerHTML = badgeList.map(badge => `<button class="badge-slot" type="button" data-badge="${badge.id}" title="${badge.name}: ${badge.description}" aria-label="${badge.name}${badges[badge.id] ? '' : ' (locked)'}">${badgeMedal(badge, Boolean(badges[badge.id]))}</button>`).join('');
+}
+
+// ---- Online maps: build a board, publish it with a share code, play other people's ----
+function openMaps() {
+  document.querySelector('#maps-error').textContent = '';
+  document.querySelector('#maps-code').value = '';
+  openDialog('maps');
+  loadMapList();
+}
+
+async function loadMapList() {
+  const list = document.querySelector('#maps-list');
+  const empty = document.querySelector('#maps-empty');
+  document.querySelectorAll('.maps-tabs [data-order]').forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.order === mapsOrder)));
+  list.replaceChildren();
+  empty.classList.remove('hidden');
+  empty.textContent = 'Loading maps…';
+  const order = mapsOrder;
+  try {
+    const maps = await window.UltraCloud.listMaps(order);
+    if (order !== mapsOrder) return;
+    empty.textContent = 'No maps yet. Be the first to make one!';
+    empty.classList.toggle('hidden', maps.length > 0);
+    list.replaceChildren(...maps.map(map => {
+      const row = document.createElement('li');
+      row.className = 'maps-row';
+      const info = document.createElement('div');
+      const name = document.createElement('b');
+      name.textContent = map.name;
+      const details = document.createElement('small');
+      details.textContent = `by ${map.author} · ${map.width} × ${map.height} · ${map.mineCount} mines`;
+      info.append(name, details);
+      const plays = document.createElement('span');
+      plays.className = 'maps-plays';
+      plays.textContent = `${map.plays} play${map.plays === 1 ? '' : 's'}`;
+      const actions = document.createElement('div');
+      actions.className = 'maps-actions';
+      if (signedIn() && (map.authorUid === account.uid || account.admin)) {
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'text-button maps-delete';
+        remove.dataset.delete = map.code;
+        remove.textContent = 'Delete';
+        actions.append(remove);
+      }
+      const play = document.createElement('button');
+      play.type = 'button';
+      play.className = 'secondary-button';
+      play.dataset.play = map.code;
+      play.textContent = 'Play';
+      actions.append(play);
+      row.append(info, plays, actions);
+      return row;
+    }));
+  } catch (error) {
+    if (order !== mapsOrder) return;
+    empty.textContent = error.message;
+  }
+}
+
+async function playMap(code) {
+  const error = document.querySelector('#maps-error');
+  error.textContent = 'Loading map…';
+  try {
+    const map = await window.UltraCloud.getMap(code);
+    if (!map) {
+      error.textContent = `No map with the code ${code}.`;
+      return;
+    }
+    const layout = map.layout.split(',').map(Number);
+    error.textContent = '';
+    closeDialog();
+    startGame(map.width, map.height, layout.length, 'play');
+    game.map = { code: map.code, name: map.name, author: map.author, authorUid: map.authorUid };
+    hideDuelMines(layout);
+    window.UltraCloud.addPlay(map.code).catch(() => {});
+  } catch (problem) {
+    error.textContent = problem.message;
+  }
+}
+
+async function deleteMap(button) {
+  if (!button.dataset.confirm) {
+    button.dataset.confirm = 'yes';
+    button.textContent = 'Sure?';
+    return;
+  }
+  button.disabled = true;
+  try {
+    await window.UltraCloud.deleteMap(account, button.dataset.delete);
+    loadMapList();
+  } catch (error) {
+    document.querySelector('#maps-error').textContent = error.message;
+    button.disabled = false;
+  }
+}
+
+function startMapMaker(event) {
+  event.preventDefault();
+  const name = document.querySelector('#map-name').value.trim();
+  const width = Number(document.querySelector('#map-width').value);
+  const height = Number(document.querySelector('#map-height').value);
+  const error = document.querySelector('#map-new-error');
+  if (!name) {
+    error.textContent = 'Give your map a name.';
+    return;
+  }
+  if (![width, height].every(size => Number.isInteger(size) && size >= 5 && size <= 50)) {
+    error.textContent = 'Width and height must be whole numbers between 5 and 50.';
+    return;
+  }
+  closeDialog();
+  startGame(width, height, 0, 'setup');
+  game.map = { name, author: account.username, authorUid: account.uid };
+  showDuelStatus();
+  applyDuelUi();
+}
+
+function newMapCode() {
+  const random = crypto.getRandomValues(new Uint8Array(6));
+  return [...random].map(value => mapCodeLetters[value % mapCodeLetters.length]).join('');
+}
+
+async function publishMap() {
+  const total = game.width * game.height;
+  if (!game.mines || game.mines >= total) {
+    setStatus(game.mines ? 'Leave at least one tile without a mine.' : 'Place at least one mine first.', 'lose');
+    return;
+  }
+  if (!signedIn()) {
+    openAccount('choice');
+    return;
+  }
+  const layout = game.tiles.map((tile, index) => (tile.mine ? index : -1)).filter(index => index >= 0);
+  duelPrimary.disabled = true;
+  duelPrimary.textContent = 'Publishing…';
+  try {
+    let code = newMapCode();
+    // Codes are random; in the very rare case one is taken, pick another.
+    for (let tries = 0; tries < 4 && await window.UltraCloud.getMap(code); tries += 1) code = newMapCode();
+    await window.UltraCloud.createMap(account, {
+      code,
+      name: game.map.name,
+      author: account.username,
+      width: game.width,
+      height: game.height,
+      mineCount: layout.length,
+      layout: layout.join(','),
+      createdAt: Date.now()
+    });
+    document.querySelector('#map-done-code').textContent = code;
+    document.querySelector('#map-done-copy').textContent = 'Copy code';
+    // The board turns into a playable copy of the map, so the maker can try it too.
+    game.map.code = code;
+    game.duel = 'play';
+    hideDuelMines(layout);
+    openDialog('mapDone');
+    awardBadge('mapmaker');
+  } catch (error) {
+    setStatus(error.message, 'lose');
+  } finally {
+    duelPrimary.disabled = false;
+    applyDuelUi();
+  }
+}
+
+async function copyMapCode() {
+  const code = document.querySelector('#map-done-code').textContent;
+  try {
+    await navigator.clipboard.writeText(code);
+    document.querySelector('#map-done-copy').textContent = 'Copied!';
+  } catch {
+    document.querySelector('#map-done-copy').textContent = code;
+  }
 }
 
 function openAccount(view, firstLaunch = false) {
@@ -2077,31 +2397,64 @@ async function removeAdminFromAccount() {
 }
 
 // The big moment: a platinum trophy, like finishing every trophy in a game.
+// ---- Corner pop-ups: the admin trophy and badges. One at a time; extras wait in line. ----
 function showPlatinum() {
+  queueToast({
+    kind: 'admin',
+    art: adminToastArt,
+    kicker: 'You earned a trophy!',
+    title: 'Admin',
+    icon: true,
+    sub: 'Golden Mine · UltraSweeper',
+    sound: [523.25, 659.25, 783.99, 1046.5, 1318.51]
+  });
+}
+
+function queueToast(toast) {
+  toastQueue.push(toast);
+  if (!toastShowing) nextToast();
+}
+
+function nextToast() {
+  const toast = toastQueue.shift();
   const overlay = document.querySelector('#platinum');
+  if (!toast) {
+    toastShowing = false;
+    return;
+  }
+  toastShowing = true;
+  overlay.dataset.kind = toast.kind;
+  overlay.querySelector('.platinum-art').innerHTML = toast.art;
+  overlay.querySelector('.platinum-kicker').textContent = toast.kicker;
+  overlay.querySelector('.platinum-title > span').textContent = toast.title;
+  overlay.querySelector('.platinum-icon').classList.toggle('hidden', !toast.icon);
+  overlay.querySelector('.platinum-sub').textContent = toast.sub;
   overlay.classList.remove('hidden', 'leaving', 'playing');
   void overlay.offsetWidth;
   overlay.classList.add('playing');
-  playPlatinumSound();
+  playPlatinumSound(toast.sound);
   window.clearTimeout(platinumTimer);
-  platinumTimer = window.setTimeout(hidePlatinum, 6500);
+  platinumTimer = window.setTimeout(hidePlatinum, toast.kind === 'admin' ? 6500 : 4500);
 }
 
 function hidePlatinum() {
   const overlay = document.querySelector('#platinum');
-  if (overlay.classList.contains('hidden')) return;
+  if (overlay.classList.contains('hidden') || overlay.classList.contains('leaving')) return;
   window.clearTimeout(platinumTimer);
   overlay.classList.add('leaving');
-  platinumTimer = window.setTimeout(() => overlay.classList.add('hidden'), 500);
+  platinumTimer = window.setTimeout(() => {
+    overlay.classList.add('hidden');
+    window.setTimeout(nextToast, 250);
+  }, 500);
 }
 
-function playPlatinumSound() {
+function playPlatinumSound(notes) {
   if (!musicOn || !musicVolume) return;
   try {
     const context = new (window.AudioContext || window.webkitAudioContext)();
     const level = 0.16 * (musicVolume / 100);
     // A rising bell arpeggio, each note with a soft overtone.
-    [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((frequency, index) => {
+    notes.forEach((frequency, index) => {
       const at = context.currentTime + 0.3 + index * 0.11;
       [[1, 1], [2.01, 0.22]].forEach(([multiple, share]) => {
         const oscillator = context.createOscillator();

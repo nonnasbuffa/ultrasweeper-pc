@@ -148,6 +148,41 @@
     addAdmin: (session, password) => putDocument(session, `admins/${session.uid}`, { code: password }),
     removeAdmin: session => deleteDocument(session, `admins/${session.uid}`),
 
+    // Online maps, stored by their share code. Anyone can browse and play them; making one needs an account.
+    getMap: code => getDocument(null, `maps/${encodeURIComponent(code.toUpperCase())}`),
+    async createMap(session, map) {
+      const token = await idToken(session);
+      await request(`${documentUrl(`maps/${map.code}`)}?currentDocument.exists=false`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(encode({ ...map, authorUid: session.uid, plays: 0 }))
+      });
+    },
+    deleteMap: (session, code) => deleteDocument(session, `maps/${code}`),
+    // Adds 1 to a map's play count on the server, so two players at once can't overwrite each other.
+    addPlay: code => request(`${endpoints.database}/projects/${config.projectId}/databases/(default)/documents:commit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ writes: [{ transform: {
+        document: `projects/${config.projectId}/databases/(default)/documents/maps/${code}`,
+        fieldTransforms: [{ fieldPath: 'plays', increment: { integerValue: '1' } }]
+      } }] })
+    }),
+    // The newest or most played maps (without their mine layouts, to keep the list quick).
+    async listMaps(order) {
+      const body = await request(`${endpoints.database}/projects/${config.projectId}/databases/(default)/documents:runQuery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ structuredQuery: {
+          from: [{ collectionId: 'maps' }],
+          select: { fields: ['code', 'name', 'author', 'authorUid', 'width', 'height', 'mineCount', 'plays', 'createdAt'].map(fieldPath => ({ fieldPath })) },
+          orderBy: [{ field: { fieldPath: order }, direction: 'DESCENDING' }],
+          limit: 25
+        } })
+      });
+      return (body || []).filter(row => row.document).map(row => decode(row.document));
+    },
+
     // For testing against Firebase's local emulators.
     useEmulator(host, projectId) {
       config.projectId = projectId;

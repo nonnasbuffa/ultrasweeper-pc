@@ -1404,16 +1404,16 @@ body.legacy-mode .gold-name { background: linear-gradient(90deg, #b8860b, #e0a80
    ========================================================================== */
 .platinum { position: fixed; z-index: 300; top: calc(18px + var(--safe-top, 0px)); right: 18px; width: min(380px, calc(100vw - 32px)); cursor: pointer; }
 .platinum-toast { position: relative; padding: 2px; overflow: hidden; border-radius: 18px; box-shadow: 0 14px 40px #000a, 0 0 0 1px #ffffff14; }
-.platinum-toast::before { position: absolute; inset: -60%; background: conic-gradient(#ffffff, #8eaccc, #ffffff, #5d7fa8, #e9f3ff, #9fb9d6, #ffffff); content: ''; animation: plat-spin 2.6s linear infinite; }
+.platinum-toast::before { position: absolute; inset: -60%; background: conic-gradient(#fff6c4, #ffcf3a, #fff6c4, #b8860b, #ffe680, #e8a90c, #fff6c4); content: ''; animation: plat-spin 2.6s linear infinite; }
 .platinum-inner { position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 20px 12px 12px; overflow: hidden; border-radius: 16px; background: linear-gradient(135deg, #2b3448f7, #141922f7 70%); backdrop-filter: blur(12px); }
 .platinum-art { display: grid; flex: none; place-items: center; width: 64px; height: 64px; border-radius: 12px; background: radial-gradient(circle at 50% 40%, #3b4f73, #141a26 75%); box-shadow: inset 0 0 0 1px #bcd6ff55, 0 4px 14px #0007; }
-.platinum-art-trophy { width: 50px; height: 50px; filter: drop-shadow(0 0 8px #bcd6ff99) drop-shadow(0 3px 4px #0008); }
+.platinum-art-trophy { width: 52px; height: 52px; filter: drop-shadow(0 0 8px #ffd54a99) drop-shadow(0 3px 4px #0008); }
 .platinum-text { min-width: 0; }
 .platinum-text p { margin: 0; }
 .platinum-kicker { color: #aab6c8; font-size: .8rem; font-weight: 600; }
 .platinum-title { display: flex; align-items: center; gap: 7px; margin-top: 3px !important; color: #fff; font: 700 1.25rem Sora, ui-sans-serif, system-ui, sans-serif; letter-spacing: -.01em; }
-.platinum-icon { flex: none; width: 24px; height: 24px; filter: drop-shadow(0 0 6px #bcd6ffcc); }
-.platinum-sub { margin-top: 2px !important; background: linear-gradient(90deg, #ffffff, #a9c3e2 50%, #ffffff); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: .74rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.platinum-icon { flex: none; width: 24px; height: 24px; filter: drop-shadow(0 0 6px #ffd54acc); }
+.platinum-sub { margin-top: 2px !important; background: linear-gradient(90deg, #fff6c4, #ffcc33 50%, #fff6c4); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: .74rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .platinum-gleam { position: absolute; top: 0; bottom: 0; left: -40%; width: 30%; background: linear-gradient(100deg, transparent, #ffffff55, transparent); transform: skewX(-18deg); pointer-events: none; }
 .platinum-spark { position: absolute; top: 50%; left: 46px; width: 12px; height: 12px; background: #fff; clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); opacity: 0; filter: drop-shadow(0 0 6px #bcd6ff); pointer-events: none; }
 
@@ -1430,7 +1430,7 @@ body.legacy-mode .gold-name { background: linear-gradient(90deg, #b8860b, #e0a80
 @keyframes plat-spin { to { rotate: 360deg; } }
 @keyframes plat-in { from { opacity: 0; transform: translateX(120%) scale(.9); } }
 @keyframes plat-out { to { opacity: 0; transform: translateX(120%); } }
-@keyframes plat-glow { 50% { box-shadow: 0 14px 40px #000a, 0 0 28px #bcd6ff88; } }
+@keyframes plat-glow { 50% { box-shadow: 0 14px 40px #000a, 0 0 28px #ffd54a88; } }
 @keyframes plat-art { from { opacity: 0; transform: scale(.3) rotate(-20deg); } }
 @keyframes plat-pop { from { opacity: 0; transform: scale(0) rotate(-40deg); } }
 @keyframes plat-text { from { opacity: 0; transform: translateY(6px); } }
@@ -1539,3 +1539,79 @@ body.legacy-mode .platinum.leaving .platinum-toast { animation: xp-balloon-out .
 body.legacy-mode .platinum.playing .platinum-art, body.legacy-mode .platinum.playing .platinum-icon, body.legacy-mode .platinum.playing .platinum-kicker, body.legacy-mode .platinum.playing .platinum-title > span, body.legacy-mode .platinum.playing .platinum-sub { animation: none; }
 @keyframes xp-balloon-in { from { opacity: 0; } }
 @keyframes xp-balloon-out { to { opacity: 0; } }
+
+/* Badge pop-ups use the same card, with the badge's own colour and its description underneath */
+.platinum[data-kind="badge"] .platinum-sub { background: none; color: #c3cfdf; font-size: .78rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.platinum-art .badge-medal { width: 54px; height: 54px; }
+.platinum-art .badge-medal svg { width: 28px; height: 28px; }
+body.legacy-mode .platinum[data-kind="badge"] .platinum-sub { color: #444; font: 11px Tahoma, sans-serif; }
+body.legacy-mode .platinum-art .badge-medal { width: 34px; height: 34px; }
+body.legacy-mode .platinum-art .badge-medal svg { width: 18px; height: 18px; }
+
+/* ==========================================================================
+   Badges (Roblox-style medals on the profile)
+   ========================================================================== */
+.badge-medal { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--badge) 55%, #fff), var(--badge) 55%, color-mix(in srgb, var(--badge) 60%, #000)); color: #fff; box-shadow: inset 0 0 0 3px #ffffff40, 0 3px 10px #0006; }
+.badge-medal svg { width: 22px; height: 22px; filter: drop-shadow(0 1px 1px #0006); }
+.badge-medal.locked { background: #2b3544; color: #5d6b80; box-shadow: inset 0 0 0 2px #3a4558; }
+.badge-medal.locked svg { filter: none; }
+.profile-label small { margin-left: 4px; color: #7f8ea3; font-weight: 600; }
+.profile-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.badge-slot { padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; transition: transform .2s var(--ease-out); }
+.badge-slot:hover { transform: translateY(-2px) scale(1.06); }
+.badge-slot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.profile-badge-info { min-height: 1.3em; margin: 6px 0 0; color: #9cabbe; font-size: .8rem; }
+@media (max-width: 600px) {
+  .profile-badges { gap: 6px; }
+  .profile-badges .badge-medal { width: 38px; height: 38px; }
+  .profile-badges .badge-medal svg { width: 19px; height: 19px; }
+}
+body.legacy-mode .badge-medal { box-shadow: inset 0 0 0 2px #ffffff60, 1px 1px 2px #0005; }
+body.legacy-mode .profile-badges .badge-medal { width: 34px; height: 34px; }
+body.legacy-mode .profile-badges .badge-medal svg { width: 18px; height: 18px; }
+body.legacy-mode .badge-medal.locked { background: #d4d0c8; color: #9a9a8e; box-shadow: inset 1px 1px 0 #808080, inset -1px -1px 0 #fff; }
+body.legacy-mode .profile-badges { gap: 5px; }
+body.legacy-mode .profile-badge-info { margin-top: 4px; color: #555; font: 11px Tahoma, sans-serif; }
+
+/* ==========================================================================
+   Online maps
+   ========================================================================== */
+.maps-toggle .admin-toggle-icon { color: #7ad1ff; }
+.maps-title-icon { color: #7ad1ff; }
+.maps-card { width: min(100%, 580px); }
+.maps-code { display: flex; gap: 8px; margin-top: 16px; }
+.maps-code input { flex: 1; min-width: 0; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.maps-code input::placeholder { font-weight: 500; letter-spacing: 0; text-transform: none; }
+.maps-code .primary-button { width: auto; padding-inline: 22px; }
+.maps-card .form-error { min-height: 1.2em; margin: 6px 0 0; }
+.maps-tabs { display: flex; gap: 4px; margin: 10px 0 10px; padding: 4px; border-radius: 12px; background: #121821; }
+.maps-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.maps-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 10px 10px 10px 14px; border: 1px solid #2c3544; border-radius: 12px; background: #151b24; }
+.maps-row div:first-child { display: grid; min-width: 0; }
+.maps-row b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.maps-row small { color: #8f9daf; font-size: .78rem; }
+.maps-plays { color: #9cabbe; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+.maps-actions { display: flex; align-items: center; gap: 4px; }
+.maps-actions .secondary-button { padding: 8px 16px; }
+.maps-delete { color: #ff9a9a; font-size: .8rem; }
+.maps-footer { display: flex; justify-content: flex-end; margin-top: 14px; }
+.map-done-card { text-align: center; }
+.map-done-code { margin: 14px 0 0; color: #fff; font: 700 2.4rem Sora, ui-sans-serif, system-ui, sans-serif; letter-spacing: .2em; }
+@media (max-width: 600px) {
+  .maps-row { grid-template-columns: 1fr auto; }
+  .maps-plays { display: none; }
+}
+
+body.legacy-mode .maps-toggle .admin-toggle-icon, body.legacy-mode .maps-title-icon { color: #1a6fb0; }
+body.legacy-mode .maps-code { gap: 6px; margin-top: 4px; }
+body.legacy-mode .maps-code .primary-button { min-width: 70px; margin: 0; }
+body.legacy-mode .maps-tabs { flex-wrap: wrap; gap: 0; margin-block: 8px 0; padding: 0; border-bottom: 1px solid #919b9c; border-radius: 0; background: none; }
+body.legacy-mode .maps-tabs .stats-tab { flex: 0 0 auto; margin: 0 -1px -1px 0; padding: 3px 10px; border: 1px solid #919b9c; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, #fff, #ecebe5); color: #000; font: 12px Tahoma, sans-serif; box-shadow: none; }
+body.legacy-mode .maps-tabs .stats-tab[aria-selected="true"] { position: relative; z-index: 1; border-top: 2px solid #f8b636; border-bottom-color: #fff; background: #fff; }
+body.legacy-mode .maps-list { gap: 0; border: 1px solid #919b9c; border-top: 0; background: #fff; }
+body.legacy-mode .maps-row { gap: 8px; padding: 5px 8px; border: 0; border-bottom: 1px solid #ecebe3; border-radius: 0; background: transparent; font: 12px Tahoma, sans-serif; }
+body.legacy-mode .maps-row small, body.legacy-mode .maps-plays { color: #555; font: 11px Tahoma, sans-serif; }
+body.legacy-mode .maps-actions .secondary-button { min-width: 60px; padding: 2px 10px; }
+body.legacy-mode .maps-delete { color: #b00000; }
+body.legacy-mode .maps-footer { margin-top: 8px; }
+body.legacy-mode .map-done-code { margin: 6px 0 4px; color: #000; font: bold 26px Tahoma, sans-serif; letter-spacing: .15em; }
