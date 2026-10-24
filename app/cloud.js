@@ -239,6 +239,25 @@
       });
     },
 
+    // ---- Bans ----
+    // A ban is stored under the player's account id. Only admins can add or lift one, and the server rules
+    // stop a banned account from saving, publishing its profile, sharing maps or adding friends.
+    getBan: uid => getDocument(null, `bans/${uid}`),
+    banPlayer: (session, ban) => putDocument(session, `bans/${ban.uid}`, { ...ban, by: session.username, at: Date.now() }),
+    unbanPlayer: (session, uid) => deleteDocument(session, `bans/${uid}`),
+    async listBans() {
+      const body = await request(`${endpoints.database}/projects/${config.projectId}/databases/(default)/documents:runQuery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ structuredQuery: {
+          from: [{ collectionId: 'bans' }],
+          orderBy: [{ field: { fieldPath: 'at' }, direction: 'DESCENDING' }],
+          limit: 50
+        } })
+      });
+      return (body || []).filter(row => row.document).map(row => decode(row.document));
+    },
+
     // For testing against Firebase's local emulators.
     useEmulator(host, projectId) {
       config.projectId = projectId;

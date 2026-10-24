@@ -16,7 +16,8 @@ const dialogs = {
   maps: document.querySelector('#maps-screen'),
   mapNew: document.querySelector('#map-new-screen'),
   mapDone: document.querySelector('#map-done-screen'),
-  friends: document.querySelector('#friends-screen')
+  friends: document.querySelector('#friends-screen'),
+  ban: document.querySelector('#ban-screen')
 };
 
 const boardElement = document.querySelector('#board');
@@ -342,6 +343,13 @@ document.querySelector('#profile-badges').addEventListener('click', event => {
     : when > 1 ? `${badge.name}: ${badge.description} Earned ${new Date(when).toLocaleDateString([], { dateStyle: 'medium' })}.` : `${badge.name}: ${badge.description}`;
 });
 document.querySelector('#profile-add-admin').addEventListener('click', openAdminDialog);
+document.querySelector('#profile-moderate').addEventListener('click', () => openBanDialog());
+document.querySelector('#profile-ban').addEventListener('click', () => openBanDialog(profileView ? profileView.username : ''));
+document.querySelector('#ban-form').addEventListener('submit', submitBan);
+document.querySelector('#ban-list').addEventListener('click', event => {
+  const button = event.target.closest('[data-unban]');
+  if (button) liftBan(button);
+});
 document.querySelector('#platinum').addEventListener('click', hidePlatinum);
 accountButton.addEventListener('click', clickAccountButton);
 document.querySelector('#profile-picture').addEventListener('click', () => document.querySelector('#profile-file').click());
@@ -1632,6 +1640,7 @@ async function pullProgress(justLoggedIn = false) {
   const session = account;
   setSyncState('saving');
   try {
+    if (await checkBanned(session)) return;
     const cloud = await window.UltraCloud.load(session);
     session.admin = await window.UltraCloud.isAdmin(session);
     if (account !== session) return;
@@ -1692,6 +1701,8 @@ function reloadProgress() {
 
 function cloudFailed(error, session) {
   if (account !== session) return;
+  // The server refuses a banned account's saves: find out if that's why.
+  if (error.kind === 'denied') checkBanned(session);
   if (error.kind === 'signed-out') {
     const username = session.username;
     logOut();
@@ -1701,6 +1712,111 @@ function cloudFailed(error, session) {
     return;
   }
   setSyncState(error.kind === 'offline' ? 'offline' : 'error');
+}
+
+function banMessage(ban) {
+  return `This account was banned by an admin${ban.reason ? `: ${ban.reason}` : '.'}`;
+}
+
+// Logs a banned account out and says why. Returns true if the account is banned.
+async function checkBanned(session) {
+  const ban = await window.UltraCloud.getBan(session.uid).catch(() => null);
+  if (!ban || account !== session) return false;
+  logOut();
+  openAccount('login');
+  document.querySelector('#account-username').value = session.username;
+  document.querySelector('#account-error').textContent = banMessage(ban);
+  return true;
+}
+
+// ---- Bans (admins only) ----
+function openBanDialog(name = '') {
+  if (!signedIn() || !account.admin) return;
+  profileView = null;
+  openDialog('ban');
+  document.querySelector('#ban-name').value = name;
+  document.querySelector('#ban-reason').value = '';
+  document.querySelector('#ban-error').textContent = '';
+  renderBans();
+}
+
+async function renderBans() {
+  const empty = document.querySelector('#ban-empty');
+  const list = document.querySelector('#ban-list');
+  empty.classList.remove('hidden');
+  empty.textContent = 'Loading bans…';
+  try {
+    const bans = await window.UltraCloud.listBans();
+    if (openDialogName !== 'ban') return;
+    document.querySelector('#ban-total').textContent = bans.length || '';
+    empty.textContent = 'Nobody is banned.';
+    empty.classList.toggle('hidden', bans.length > 0);
+    list.replaceChildren(...bans.map(ban => {
+      const row = document.createElement('li');
+      row.className = 'maps-row friend-row';
+      const text = document.createElement('div');
+      const name = document.createElement('b');
+      name.textContent = ban.username;
+      const note = document.createElement('small');
+      note.textContent = `By ${ban.by} · ${new Date(ban.at).toLocaleDateString()}${ban.reason ? ` · ${ban.reason}` : ''}`;
+      text.append(name, note);
+      const actions = document.createElement('div');
+      actions.className = 'maps-actions';
+      actions.append(friendButton('Unban', { unban: ban.uid, name: ban.username }));
+      row.append(friendAvatar('', ban.username), text, actions);
+      return row;
+    }));
+  } catch (problem) {
+    empty.textContent = problem.message;
+  }
+}
+
+async function submitBan(event) {
+  event.preventDefault();
+  const name = document.querySelector('#ban-name').value.trim();
+  const reason = document.querySelector('#ban-reason').value.trim();
+  const error = document.querySelector('#ban-error');
+  const button = event.target.querySelector('button[type="submit"]');
+  if (button.disabled) return;
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(name)) {
+    error.textContent = 'Type the username of the player to ban.';
+    return;
+  }
+  if (name.toLowerCase() === account.username.toLowerCase()) {
+    error.textContent = "You can't ban yourself.";
+    return;
+  }
+  button.disabled = true;
+  error.textContent = 'Banning…';
+  try {
+    const card = await window.UltraCloud.getProfile(name);
+    if (!card) {
+      error.textContent = `There's no player called ${name}.`;
+      return;
+    }
+    await window.UltraCloud.banPlayer(account, { uid: card.uid, username: card.username, reason });
+    error.textContent = `${card.username} is banned.`;
+    document.querySelector('#ban-name').value = '';
+    document.querySelector('#ban-reason').value = '';
+    renderBans();
+  } catch (problem) {
+    error.textContent = problem.kind === 'denied' ? 'Only admins can ban players.' : problem.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function liftBan(button) {
+  const error = document.querySelector('#ban-error');
+  button.disabled = true;
+  try {
+    await window.UltraCloud.unbanPlayer(account, button.dataset.unban);
+    error.textContent = `${button.dataset.name} can play again.`;
+    renderBans();
+  } catch (problem) {
+    error.textContent = problem.kind === 'denied' ? 'Only admins can lift bans.' : problem.message;
+    button.disabled = false;
+  }
 }
 
 function logOut() {
@@ -1839,7 +1955,8 @@ function renderProfile() {
   pictureButton.disabled = viewing;
   document.querySelector('#profile-initial').textContent = shown.username[0].toUpperCase();
   document.querySelector('#profile-admin').classList.toggle('hidden', !shown.admin);
-  if (viewing) document.querySelector('#profile-status').textContent = shown.admin ? 'UltraSweeper admin' : 'UltraSweeper player';
+  document.querySelector('#profile-banned').classList.toggle('hidden', !(viewing && shown.banned));
+  if (viewing) document.querySelector('#profile-status').textContent = shown.banned ? 'Banned from UltraSweeper' : shown.admin ? 'UltraSweeper admin' : 'UltraSweeper player';
   image.classList.toggle('hidden', !shown.picture);
   if (shown.picture) image.src = shown.picture;
   else image.removeAttribute('src');
@@ -1885,6 +2002,12 @@ function renderProfile() {
   document.querySelector('#profile-remove-picture').classList.toggle('hidden', viewing || !profile.picture);
   document.querySelector('#profile-add-admin').classList.toggle('hidden', viewing || !signedIn() || Boolean(account.admin) || !adminState.unlocked);
   document.querySelector('#profile-back').classList.toggle('hidden', !viewing);
+  // Banning is for admins only (the server checks this too).
+  const isAdmin = signedIn() && Boolean(account.admin);
+  document.querySelector('#profile-moderate').classList.toggle('hidden', viewing || !isAdmin);
+  const banButton = document.querySelector('#profile-ban');
+  banButton.classList.toggle('hidden', !viewing || !isAdmin || shown.username.toLowerCase() === account.username.toLowerCase());
+  banButton.textContent = shown.banned ? 'Manage ban' : 'Ban player';
   renderBadges();
 }
 
@@ -2163,6 +2286,8 @@ async function checkFriendRequests() {
   if (!signedIn()) return;
   const session = account;
   try {
+    // This runs every minute and a half, so a ban takes effect soon even mid-game.
+    if (await checkBanned(session)) return;
     const incoming = await window.UltraCloud.listRequests(session, 'incoming');
     if (account !== session) return;
     setFriendAlert(incoming.length);
@@ -2400,8 +2525,9 @@ async function viewFriend(name) {
     } catch {
       // No times to show.
     }
+    const ban = await window.UltraCloud.getBan(card.uid).catch(() => null);
     error.textContent = '';
-    profileView = { ...card, times, played: null };
+    profileView = { ...card, times, played: null, banned: Boolean(ban) };
     openDialog('profile');
     renderProfile();
   } catch (problem) {
@@ -2457,6 +2583,11 @@ async function submitAccount(event) {
   button.textContent = signup ? 'Creating…' : 'Logging in…';
   try {
     const session = await (signup ? window.UltraCloud.signUp(username, password) : window.UltraCloud.logIn(username, password));
+    const ban = await window.UltraCloud.getBan(session.uid);
+    if (ban) {
+      error.textContent = banMessage(ban);
+      return;
+    }
     account = { ...session, username };
     saveAccount();
     // A new account starts with whatever was played on this device; logging in brings the account's progress here.

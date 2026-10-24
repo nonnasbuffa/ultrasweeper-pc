@@ -28,6 +28,7 @@
       <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="2" /></symbol>
       <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.2" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7" fill="none" stroke="currentColor" stroke-width="2.2" /></symbol>
       <symbol id="icon-cube" viewBox="0 0 24 24"><path d="M12 2.8 20 7.2v9.6l-8 4.4-8-4.4V7.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M4.3 7.4 12 11.7l7.7-4.3M12 11.7v9.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></symbol>
+      <symbol id="icon-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2.4" /><path d="M6 18 18 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
       <symbol id="icon-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2" /><path d="M3.6 12h16.8M12 3.4c2.4 2.4 3.6 5.3 3.6 8.6s-1.2 6.2-3.6 8.6c-2.4-2.4-3.6-5.3-3.6-8.6s1.2-6.2 3.6-8.6z" fill="none" stroke="currentColor" stroke-width="1.8" /></symbol>
       <symbol id="badge-flag" viewBox="0 0 24 24"><path d="M7 21V4M7 4.5h10l-2.4 3.6L17 11.7H7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" /></symbol>
       <symbol id="badge-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" fill="currentColor" /></symbol>
@@ -277,6 +278,7 @@
             <div class="profile-name-row">
               <h2 id="profile-name">Guest</h2>
               <span id="profile-admin" class="profile-admin hidden"><svg><use href="#icon-trophy" /></svg>Admin</span>
+              <span id="profile-banned" class="profile-banned hidden"><svg><use href="#icon-ban" /></svg>Banned</span>
             </div>
             <p id="profile-status" class="profile-status">Progress only saved on this device</p>
           </div>
@@ -302,6 +304,8 @@
         <div class="profile-actions">
           <button id="profile-back" class="secondary-button hidden" type="button">Back to friends</button>
           <button id="profile-add-admin" class="text-button hidden" type="button">Add admin to profile</button>
+          <button id="profile-moderate" class="text-button hidden" type="button">Ban players</button>
+          <button id="profile-ban" class="secondary-button danger-button hidden" type="button">Ban player</button>
           <button id="profile-remove-picture" class="text-button hidden" type="button">Remove picture</button>
           <button id="profile-account" class="secondary-button" type="button">Log Out</button>
         </div>
@@ -388,6 +392,25 @@
           <ol id="friends-list" class="maps-list"></ol>
           <p id="friends-empty" class="stats-empty hidden"></p>
         </div>
+      </div>
+    </section>
+
+    <section id="ban-screen" class="dialog-screen hidden" aria-labelledby="ban-title" role="dialog" aria-modal="true">
+      <div class="settings-card friends-card ban-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Ban Players</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Admins only</p>
+        <h2 id="ban-title"><svg class="admin-title-icon ban-title-icon"><use href="#icon-ban" /></svg>Ban Players</h2>
+        <p class="settings-intro">A banned player is logged out and can't log in, save progress, share maps or add friends until an admin lifts the ban.</p>
+        <form id="ban-form" class="ban-form" novalidate>
+          <input id="ban-name" type="text" placeholder="Username" maxlength="20" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Username to ban" />
+          <input id="ban-reason" type="text" placeholder="Reason (optional)" maxlength="100" autocomplete="off" aria-label="Reason" />
+          <button class="primary-button danger-button" type="submit">Ban</button>
+        </form>
+        <p id="ban-error" class="form-error" role="alert"></p>
+        <p class="profile-label">Banned Players <small id="ban-total"></small></p>
+        <ol id="ban-list" class="maps-list"></ol>
+        <p id="ban-empty" class="stats-empty hidden"></p>
       </div>
     </section>
 
