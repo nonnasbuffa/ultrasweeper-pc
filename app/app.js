@@ -133,6 +133,8 @@ let friendsTimer = null;
 let shownBadges = {};
 // This username gets the gold aura on its profile.
 const goldAuraPlayers = ['aski650'];
+// The game's owner can never be banned (the server rules refuse it too).
+const unbannablePlayers = ['aski650'];
 // null = not asked yet, { guest: true }, or a signed-in player { username, uid, refreshToken }.
 let account = loadAccount();
 let accountView = 'choice';
@@ -1786,6 +1788,10 @@ async function submitBan(event) {
     error.textContent = "You can't ban yourself.";
     return;
   }
+  if (unbannablePlayers.includes(name.toLowerCase())) {
+    error.textContent = `${name} can't be banned.`;
+    return;
+  }
   button.disabled = true;
   error.textContent = 'Banning…';
   try {
@@ -2006,7 +2012,7 @@ function renderProfile() {
   const isAdmin = signedIn() && Boolean(account.admin);
   document.querySelector('#profile-moderate').classList.toggle('hidden', viewing || !isAdmin);
   const banButton = document.querySelector('#profile-ban');
-  banButton.classList.toggle('hidden', !viewing || !isAdmin || shown.username.toLowerCase() === account.username.toLowerCase());
+  banButton.classList.toggle('hidden', !viewing || !isAdmin || shown.username.toLowerCase() === account.username.toLowerCase() || unbannablePlayers.includes(shown.username.toLowerCase()));
   banButton.textContent = shown.banned ? 'Manage ban' : 'Ban player';
   renderBadges();
 }

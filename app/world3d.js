@@ -1199,7 +1199,6 @@
         <strong>3D Mode</strong>
         ${w.touch ? touchHelp : desktopHelp}
       </div>
-      <div class="world3d-mouse hidden">Press <b>Esc</b> to move the camera</div>
       <div class="world3d-tip hidden">${w.touch ? 'Tap the face for a new game' : 'Press <b>R</b> for a new game'}</div>
       ${w.touch ? '<div class="world3d-stick"><i></i></div><button type="button" class="world3d-jump" aria-label="Jump">Jump</button><button type="button" class="world3d-view" aria-label="Switch camera">View</button>' : ''}`;
     w.container.append(root);
@@ -1208,7 +1207,6 @@
       hotbar: root.querySelector('.world3d-hotbar'),
       start: root.querySelector('.world3d-start'),
       tip: root.querySelector('.world3d-tip'),
-      mouse: root.querySelector('.world3d-mouse'),
       stick: root.querySelector('.world3d-stick'),
       jump: root.querySelector('.world3d-jump'),
       view: root.querySelector('.world3d-view')
@@ -1265,7 +1263,6 @@
         } else if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
         }
-        w.hud.mouse.classList.toggle('hidden', locked());
       });
       on(document, 'mousemove', event => {
         if (locked()) turn(event.movementX, event.movementY, 0.0022);
@@ -1440,12 +1437,10 @@
     const { options, container, player, firstPerson } = world;
     const sameBoard = options.getGame() && options.getGame().width === world.width && options.getGame().height === world.height;
     const newMatch = options.getGame() !== world.game;
-    const locked = document.pointerLockElement === renderer.domElement;
     teardown(true);
     if (!options.getGame()) return;
     world = makeWorld(options, container, sameBoard ? player : null, newMatch);
     world.firstPerson = firstPerson;
-    if (!world.touch) world.hud.mouse.classList.toggle('hidden', locked);
     world.raf = requestAnimationFrame(frame);
   }
 
@@ -1482,10 +1477,7 @@
       container.prepend(renderer.domElement);
       world = makeWorld(options, container, null, true);
       world.raf = requestAnimationFrame(frame);
-      if (!world.touch) {
-        world.hud.mouse.classList.remove('hidden');
-        grabMouse();
-      }
+      if (!world.touch) grabMouse();
     },
     stop() {
       startTicket += 1;
