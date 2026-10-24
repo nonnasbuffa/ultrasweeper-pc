@@ -26,7 +26,7 @@ button { cursor: pointer; }
 .menu-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .menu-header-actions { display: flex; align-items: center; gap: 8px; }
 .brand { display: inline-flex; align-items: center; gap: 8px; font-family: Sora, ui-sans-serif, system-ui, sans-serif; font-size: .9rem; font-weight: 700; letter-spacing: -.02em; }
-.brand img { width: 30px; height: 30px; padding: 4px; border-radius: 9px; background: linear-gradient(135deg, #9fdcff, #b681ff); box-shadow: 0 4px 14px #b681ff40; }
+.brand img { width: 32px; height: 32px; border-radius: 10px; box-shadow: 0 0 14px #5cf0d033; }
 .offline-badge { border: 1px solid #3a4b61; border-radius: 100px; padding: 6px 10px; color: #c3d9eb; background: #152334; font-size: .7rem; font-weight: 720; letter-spacing: .04em; }
 .legacy-toggle { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #3a4b61; border-radius: 100px; padding: 5px 6px 5px 10px; background: #152334; color: #c3d9eb; font-size: .7rem; font-weight: 720; letter-spacing: .04em; }
 .legacy-toggle:hover { border-color: var(--accent); color: #fff; }.legacy-toggle b { border-radius: 100px; padding: 3px 7px; background: #374a62; color: var(--accent); font-size: .65rem; }
@@ -1682,3 +1682,10 @@ body.legacy-mode .friends-card .profile-label { margin-block: 10px 6px; }
 #friend-name { font-weight: 500; letter-spacing: 0; text-transform: none; }
 #friends-error.ok { color: #8fe3a0; }
 body.legacy-mode #friends-error.ok { color: #006400; }
+
+/* Phones: keep all the menu buttons on one row (Admin shows just its shield) */
+@media (max-width: 600px) {
+  body:not(.legacy-mode) .menu-header-actions { flex-wrap: nowrap; gap: 5px; }
+  body:not(.legacy-mode) .menu-header-actions .icon-toggle, body:not(.legacy-mode) .menu-header-actions .admin-toggle { padding: 6px 9px; }
+  body:not(.legacy-mode) .menu-header-actions .admin-toggle span { display: none; }
+}
