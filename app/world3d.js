@@ -263,7 +263,7 @@
     head.add(sketch, shadowCaster);
     torso.add(head);
     const legs = [limb(hips, -0.07, 0, 0.42, 0.42), limb(hips, 0.07, 0, 0.42, 0.42)];
-    const arms = [limb(torso, -0.05, 0.45, 0.3, 0.3), limb(torso, 0.05, 0.45, 0.3, 0.3)];
+    const arms = [limb(torso, -0.05, 0.45, 0.36, 0.34), limb(torso, 0.05, 0.45, 0.36, 0.34)];
 
     // The tools are drawn the same way. The shovel carries on the line of the right forearm.
     const flat = color => new THREE.MeshBasicMaterial({ color });
@@ -508,7 +508,7 @@
     return {
       hipY: breathe * 0.012, lean: -0.04 + breathe * 0.015, twist: 0, head: 0,
       lHip: 0.05, lHipZ: -0.08, lKnee: -0.08, rHip: -0.05, rHipZ: 0.08, rKnee: -0.12,
-      lSh: 0.2, lShZ: -0.22, lEl: 1.2 + breathe * 0.04, rSh: 0.42, rShZ: 0.2, rEl: 0.4 + breathe * 0.03
+      lSh: 0.04 + breathe * 0.02, lShZ: -0.14, lEl: 0.18, rSh: 0.04 + breathe * 0.02, rShZ: 0.14, rEl: 0.18
     };
   }
 
@@ -522,7 +522,7 @@
       hipY: -Math.abs(s) * (run ? 0.07 : 0.035) - (run ? 0.04 : 0), lean: run ? -0.3 : -0.08, twist: s * (run ? 0.18 : 0.1), head: run ? 0.15 : 0,
       lHip: s * legSwing, lHipZ: -0.05, lKnee: -(0.1 + Math.max(0, c) * bend),
       rHip: -s * legSwing, rHipZ: 0.05, rKnee: -(0.1 + Math.max(0, -c) * bend),
-      lSh: 0.25 - s * armSwing * 0.5, lShZ: -0.25, lEl: 1.2, rSh: 0.45 + s * armSwing, rShZ: 0.2, rEl: run ? 1.1 : 0.5
+      lSh: -s * armSwing, lShZ: -0.16, lEl: run ? 1.2 : 0.3, rSh: s * armSwing, rShZ: 0.16, rEl: run ? 1.2 : 0.3
     };
   }
 
@@ -540,7 +540,7 @@
     const strike = { rSh: 1.05, rShZ: 0.1, rEl: 0.15, lean: -0.55, twist: -0.12, hipY: -0.13, head: 0.35, lHip: 0.45, lKnee: -0.6, rHip: -0.15, rKnee: -0.5, lSh: -0.2, lShZ: -0.6 };
     return keyframes([
       [0, null],
-      [0.19, { rSh: 2.7, rShZ: 0.15, rEl: 0.5, lean: 0.12, twist: 0.3, head: -0.15, lSh: 0.5, lShZ: -0.5 }],
+      [0.19, { rSh: 1.9, rShZ: 0.2, rEl: 0.9, lean: 0.12, twist: 0.3, head: -0.15, lSh: 0.5, lShZ: -0.5 }],
       [digImpact, strike],
       [0.36, { ...strike, rSh: 1.1, lean: -0.5 }],
       [digTime, null]
@@ -552,7 +552,7 @@
     const stab = { lSh: 1.15, lShZ: -0.1, lEl: 0.1, lean: -0.45, twist: 0.1, hipY: -0.12, head: 0.3, rHip: 0.4, rKnee: -0.55, lHip: -0.1, lKnee: -0.45, rSh: 0.2 };
     return keyframes([
       [0, null],
-      [0.16, { lSh: 2.5, lShZ: -0.15, lEl: 0.3, lean: 0.1, twist: -0.2, head: -0.1 }],
+      [0.16, { lSh: 1.8, lShZ: -0.2, lEl: 0.8, lean: 0.1, twist: -0.2, head: -0.1 }],
       [plantImpact, stab],
       [0.34, { ...stab, lSh: 1.2 }],
       [plantTime, null]
