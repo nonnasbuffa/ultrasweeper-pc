@@ -295,7 +295,154 @@
     flag.add(pole, cloth);
     arms[0].end.add(flag);
 
+    // The skeleton is never drawn itself: drawInk() traces it as a flat drawing. It still casts the shadow.
+    sketch.visible = false;
+    root.traverse(part => {
+      if (!part.material) return;
+      part.material.colorWrite = false;
+      part.material.depthWrite = false;
+    });
     return { root, body, hips, torso, head, legs, arms, shovel, flag };
+  }
+
+  // ---- The drawing. Each frame the skeleton's joints are projected to the screen and traced in ink,
+  // with slightly wobbly strokes, so he looks hand-drawn from every camera angle.
+  const inkPoint = { v: null };
+
+  function screenPoint(w, object, x = 0, y = 0, z = 0) {
+    const v = inkPoint.v.set(x, y, z);
+    object.localToWorld(v);
+    const depth = v.distanceTo(w.camera.position);
+    v.project(w.camera);
+    if (v.z > 1) return null;
+    return { x: (v.x + 1) / 2 * w.ink.width, y: (1 - v.y) / 2 * w.ink.height, depth };
+  }
+
+  // Pixel size of something this many world units wide, this far from the camera.
+  function inkSize(w, units, depth) {
+    return units * w.ink.height / (2 * Math.tan((w.camera.fov * Math.PI) / 360) * Math.max(0.1, depth));
+  }
+
+  // A pen stroke through the points, bowing a little off the straight line (same bow every frame, so it doesn't flicker).
+  function stroke(ctx, points, seed) {
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i += 1) {
+      const a = points[i - 1];
+      const b = points[i];
+      const bow = Math.sin(seed * 12.9898 + i * 78.233) * 0.06;
+      const mx = (a.x + b.x) / 2 - (b.y - a.y) * bow;
+      const my = (a.y + b.y) / 2 + (b.x - a.x) * bow;
+      ctx.quadraticCurveTo(mx, my, b.x, b.y);
+    }
+    ctx.stroke();
+  }
+
+  function drawInk(w) {
+    const { ctx } = w.ink;
+    ctx.clearRect(0, 0, w.ink.width, w.ink.height);
+    if (w.firstPerson) return;
+    const stick = w.stick;
+    const legacy = w.legacy;
+    const ink = legacy ? '#000000' : '#0b0e15';
+    const paper = legacy ? '#000000' : '#eef3fa';
+    const hips = screenPoint(w, stick.hips);
+    const neck = screenPoint(w, stick.torso, 0, 0.5, 0);
+    const head = screenPoint(w, stick.head);
+    if (!hips || !neck || !head) return;
+    const unit = inkSize(w, 1, head.depth);
+    const width = Math.max(1.5, unit * 0.065);
+    const outline = legacy ? 0 : Math.max(1, unit * 0.02);
+    const shapes = [];
+    const limb = (part, seed) => {
+      const points = [screenPoint(w, part.top), screenPoint(w, part.joint), screenPoint(w, part.end)];
+      if (points.every(Boolean)) shapes.push({ depth: points[1].depth, draw: () => line(points, seed, paper) });
+    };
+    const line = (points, seed, color, scale = 1) => {
+      if (outline) {
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = width * scale + outline * 2;
+        stroke(ctx, points, seed);
+      }
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width * scale;
+      stroke(ctx, points, seed);
+    };
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Tools.
+    const shovelTop = screenPoint(w, stick.shovel, 0, 0.3, 0);
+    const shovelEnd = screenPoint(w, stick.shovel, 0, -0.7, 0);
+    const blade = [[-0.13, -0.7], [0.13, -0.7], [0.13, -0.89], [0, -1.02], [-0.13, -0.89]].map(([x, y]) => screenPoint(w, stick.shovel, x, y, 0));
+    if (shovelTop && shovelEnd && blade.every(Boolean)) {
+      shapes.push({ depth: shovelEnd.depth, draw: () => {
+        line([shovelTop, shovelEnd], 7, legacy ? '#7a4a1a' : '#c48a4e', 0.75);
+        ctx.beginPath();
+        blade.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        ctx.closePath();
+        ctx.fillStyle = legacy ? '#9a9a9a' : '#d6dee8';
+        ctx.fill();
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = Math.max(1, width * 0.45);
+        ctx.stroke();
+      } });
+    }
+    const poleTop = screenPoint(w, stick.flag, 0, 0.65, 0);
+    const poleEnd = screenPoint(w, stick.flag, 0, -0.35, 0);
+    const cloth = [[-0.09, 0.62], [-0.09, 0.36], [0.24, 0.49]].map(([x, y]) => screenPoint(w, stick.flag, x * 1.2 + 0.11, y * 1.2 - 0.1, 0));
+    if (poleTop && poleEnd && cloth.every(Boolean)) {
+      shapes.push({ depth: poleEnd.depth, draw: () => {
+        line([poleTop, poleEnd], 3, legacy ? '#000000' : '#f2f5f9', 0.6);
+        ctx.beginPath();
+        cloth.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        ctx.closePath();
+        ctx.fillStyle = w.look.cloth;
+        ctx.fill();
+        ctx.strokeStyle = ink;
+        ctx.lineWidth = Math.max(1, width * 0.4);
+        ctx.stroke();
+      } });
+    }
+
+    stick.legs.forEach((leg, i) => limb(leg, 1 + i));
+    stick.arms.forEach((arm, i) => limb(arm, 3 + i));
+    shapes.push({ depth: neck.depth, draw: () => line([hips, neck], 5, paper) });
+    // Furthest first, so nearer strokes cover them.
+    shapes.sort((a, b) => b.depth - a.depth).forEach(shape => shape.draw());
+
+    // The head: a white circle traced twice in ink, with the slanted band.
+    const r = inkSize(w, 0.23, head.depth);
+    const tilt = Math.atan2(neck.x - hips.x, hips.y - neck.y);
+    ctx.save();
+    ctx.translate(head.x, head.y);
+    ctx.rotate(tilt * 0.6);
+    const loop = (radius, jitter, turns, start) => {
+      ctx.beginPath();
+      const steps = Math.round(40 * turns);
+      for (let i = 0; i <= steps; i += 1) {
+        const a = start + (i / 40) * Math.PI * 2;
+        const rr = radius * (1 + Math.sin(a * 3 + jitter) * 0.025 + Math.sin(a * 5 + jitter * 2) * 0.012);
+        if (i) ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+        else ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+      }
+    };
+    loop(r, 0.4, 1, 0);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = Math.max(2, r * 0.12);
+    loop(r, 1.3, 1.08, -0.4);
+    ctx.stroke();
+    ctx.lineWidth = Math.max(1, r * 0.045);
+    loop(r * 1.05, 2.6, 0.5, 2.1);
+    ctx.stroke();
+    ctx.lineWidth = Math.max(2, r * 0.1);
+    ctx.beginPath();
+    ctx.moveTo(-r, -r * 0.05);
+    ctx.quadraticCurveTo(0, -r * 0.37, r * 1.02, -r * 0.48);
+    ctx.stroke();
+    ctx.restore();
   }
 
   // A pen stroke: an even line with round tips, slightly uneven along its length and a little different each time.
@@ -1202,6 +1349,12 @@
       <div class="world3d-tip hidden">${w.touch ? 'Tap the face for a new game' : 'Press <b>R</b> for a new game'}</div>
       ${w.touch ? '<div class="world3d-stick"><i></i></div><button type="button" class="world3d-jump" aria-label="Jump">Jump</button><button type="button" class="world3d-view" aria-label="Switch camera">View</button>' : ''}`;
     w.container.append(root);
+    if (!w.ink) {
+      const canvas = document.createElement('canvas');
+      canvas.className = 'world3d-ink';
+      root.prepend(canvas);
+      w.ink = { canvas, ctx: canvas.getContext('2d'), width: 0, height: 0 };
+    }
     return {
       root,
       hotbar: root.querySelector('.world3d-hotbar'),
@@ -1367,6 +1520,14 @@
     }
     updateEffects(w, dt);
     renderer.render(w.scene, w.camera);
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const inkWidth = Math.round(w.size[0] * ratio);
+    const inkHeight = Math.round(w.size[1] * ratio);
+    if (w.ink.width !== inkWidth || w.ink.height !== inkHeight) {
+      w.ink.canvas.width = w.ink.width = inkWidth;
+      w.ink.canvas.height = w.ink.height = inkHeight;
+    }
+    drawInk(w);
   }
 
   function resize() {
@@ -1450,6 +1611,7 @@
     scratch.flat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
     scratch.v = new THREE.Vector3();
     scratch.s = new THREE.Vector3();
+    inkPoint.v = new THREE.Vector3();
     scratch.tilt = new THREE.Quaternion();
     scratch.euler = new THREE.Euler();
     scratchDirection = new THREE.Vector3();

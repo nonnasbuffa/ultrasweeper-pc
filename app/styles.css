@@ -1715,6 +1715,7 @@ body.play-3d:not(.legacy-mode) .game-status { width: max-content; max-width: cal
 body.play-3d.legacy-mode .game-screen { grid-template-areas: "title" "menu" "panel" "status" "duel"; grid-template-columns: 1fr; }
 
 .world3d-hud { position: absolute; inset: 0; pointer-events: none; }
+.world3d-ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .world3d-crosshair { position: absolute; top: 50%; left: 50%; width: 22px; height: 22px; translate: -50% -50%; }
 .world3d-crosshair::before, .world3d-crosshair::after { position: absolute; border-radius: 2px; background: #effffb; box-shadow: 0 0 0 1px #0009, 0 0 8px #5cf0d0; content: ''; }
 .world3d-crosshair::before { top: 10px; left: 2px; width: 18px; height: 2px; }
