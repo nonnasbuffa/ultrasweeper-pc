@@ -356,31 +356,27 @@
     const unit = inkSize(w, 1, head.depth);
     const width = Math.max(1.5, unit * 0.065);
     const outline = legacy ? 0 : Math.max(1, unit * 0.02);
-    const shapes = [];
+    const strokes = [[[hips, neck], 5]];
     const limb = (part, seed) => {
       const points = [screenPoint(w, part.top), screenPoint(w, part.joint), screenPoint(w, part.end)];
-      if (points.every(Boolean)) shapes.push({ depth: points[1].depth, draw: () => line(points, seed, paper) });
-    };
-    const line = (points, seed, color, scale = 1) => {
-      if (outline) {
-        ctx.strokeStyle = ink;
-        ctx.lineWidth = width * scale + outline * 2;
-        stroke(ctx, points, seed);
-      }
-      ctx.strokeStyle = color;
-      ctx.lineWidth = width * scale;
-      stroke(ctx, points, seed);
+      if (points.every(Boolean)) strokes.push([points, seed]);
     };
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-
     stick.legs.forEach((leg, i) => limb(leg, 1 + i));
     stick.arms.forEach((arm, i) => limb(arm, 3 + i));
-    shapes.push({ depth: neck.depth, draw: () => line([hips, neck], 5, paper) });
-    // Furthest first, so nearer strokes cover them.
-    shapes.sort((a, b) => b.depth - a.depth).forEach(shape => shape.draw());
+    // All the ink outlines first, then all the white on top: the body reads as one drawn shape,
+    // and nothing pops in front of anything else as the camera circles him.
+    if (outline) {
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = width + outline * 2;
+      strokes.forEach(([points, seed]) => stroke(ctx, points, seed));
+    }
+    ctx.strokeStyle = paper;
+    ctx.lineWidth = width;
+    strokes.forEach(([points, seed]) => stroke(ctx, points, seed));
 
-    // The head: a white circle traced twice in ink, with the slanted band.
+    // The head: a white circle traced twice in ink.
     const r = inkSize(w, 0.23, head.depth);
     const tilt = Math.atan2(neck.x - hips.x, hips.y - neck.y);
     ctx.save();
@@ -405,11 +401,6 @@
     ctx.stroke();
     ctx.lineWidth = Math.max(1, r * 0.045);
     loop(r * 1.05, 2.6, 0.5, 2.1);
-    ctx.stroke();
-    ctx.lineWidth = Math.max(2, r * 0.1);
-    ctx.beginPath();
-    ctx.moveTo(-r, -r * 0.05);
-    ctx.quadraticCurveTo(0, -r * 0.37, r * 1.02, -r * 0.48);
     ctx.stroke();
     ctx.restore();
   }
