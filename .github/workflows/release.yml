@@ -31,10 +31,10 @@ jobs:
         shell: bash
         run: node scripts/set-version.js
 
-      - name: Build UltraSweeper.exe
+      - name: Build UltraSweeper.exe and UltraSweeper-Setup.exe
         run: npm run build
 
-      - name: Build UltraSweeper-Lite.exe
+      - name: Build UltraSweeper-Lite.exe and UltraSweeper-Lite-Setup.exe
         run: npm run build:lite
 
       - uses: actions/upload-artifact@v4
@@ -42,7 +42,9 @@ jobs:
           name: UltraSweeper-windows
           path: |
             dist/UltraSweeper.exe
+            dist/UltraSweeper-Setup.exe
             dist/UltraSweeper-Lite.exe
+            dist/UltraSweeper-Lite-Setup.exe
 
   linux:
     # Ubuntu 22.04 matches Linux Mint 21, so the build also runs on older Mint versions.
@@ -118,11 +120,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
+            files/UltraSweeper-Setup.exe files/UltraSweeper-Lite-Setup.exe \
             files/UltraSweeper.exe files/UltraSweeper.AppImage files/UltraSweeper.deb \
             files/UltraSweeper-Lite.exe files/UltraSweeper-Lite.AppImage files/UltraSweeper-Lite.deb \
             --repo "$GITHUB_REPOSITORY" \
             --title "UltraSweeper ${GITHUB_REF_NAME#v}" \
-            --notes "**Windows:** download **UltraSweeper.exe** and double-click it. No install needed.
+            --notes "**Windows:** download **UltraSweeper-Setup.exe** to install it: it asks where to install and whether you want a desktop and Start menu shortcut. Or download **UltraSweeper.exe** to just run it, no install needed.
           If Windows shows \"Windows protected your PC\", click **More info** → **Run anyway** (the exe isn't code-signed).
 
           **Linux Mint / Ubuntu:** download **UltraSweeper.deb**, double-click it and click **Install Package**. UltraSweeper then appears in your app menu under Games.

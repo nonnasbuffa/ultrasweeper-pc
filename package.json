@@ -1,12 +1,12 @@
 {
   "name": "ultrasweeper-pc-build",
   "private": true,
-  "description": "Packs the desktop game into UltraSweeper and UltraSweeper Lite for Windows (exe) and Linux (AppImage and .deb).",
+  "description": "Packs the desktop game into UltraSweeper and UltraSweeper Lite for Windows (portable exe and installer) and Linux (AppImage and .deb).",
   "scripts": {
     "sync": "node scripts/sync-app.js",
-    "build": "electron-builder --win portable --x64 --publish never",
+    "build": "electron-builder --win portable nsis --x64 --publish never",
     "build:linux": "electron-builder --linux AppImage deb --x64 --publish never",
-    "build:lite": "electron-builder --config lite.config.json --win portable --x64 --publish never",
+    "build:lite": "electron-builder --config lite.config.json --win portable nsis --x64 --publish never",
     "build:lite:linux": "electron-builder --config lite.config.json --linux AppImage deb --x64 --publish never"
   },
   "devDependencies": {
@@ -25,7 +25,10 @@
     "asar": true,
     "npmRebuild": false,
     "win": {
-      "target": "portable",
+      "target": [
+        "portable",
+        "nsis"
+      ],
       "icon": "build/icon.png",
       "signAndEditExecutable": true
     },
@@ -48,6 +51,18 @@
     },
     "deb": {
       "artifactName": "UltraSweeper.deb"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": false,
+      "shortcutName": "UltraSweeper",
+      "uninstallDisplayName": "UltraSweeper",
+      "include": "build/installer.nsh",
+      "artifactName": "UltraSweeper-Setup.exe",
+      "runAfterFinish": true
     }
   }
 }

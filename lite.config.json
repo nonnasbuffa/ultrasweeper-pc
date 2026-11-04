@@ -11,7 +11,10 @@
   "asar": true,
   "npmRebuild": false,
   "win": {
-    "target": "portable",
+    "target": [
+      "portable",
+      "nsis"
+    ],
     "icon": "build/icon.png",
     "signAndEditExecutable": true
   },
@@ -34,5 +37,17 @@
   },
   "deb": {
     "artifactName": "UltraSweeper-Lite.deb"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": false,
+    "createStartMenuShortcut": false,
+    "shortcutName": "UltraSweeper Lite",
+    "uninstallDisplayName": "UltraSweeper Lite",
+    "include": "build/installer.nsh",
+    "artifactName": "UltraSweeper-Lite-Setup.exe",
+    "runAfterFinish": true
   }
 }
