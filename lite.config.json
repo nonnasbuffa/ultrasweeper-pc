@@ -1,0 +1,38 @@
+{
+  "appId": "com.offlineminesweeper.lite",
+  "productName": "UltraSweeper Lite",
+  "copyright": "UltraSweeper",
+  "electronVersion": "28.1.2",
+  "directories": {
+    "app": "app-lite",
+    "output": "dist",
+    "buildResources": "build"
+  },
+  "asar": true,
+  "npmRebuild": false,
+  "win": {
+    "target": "portable",
+    "icon": "build/icon.png",
+    "signAndEditExecutable": true
+  },
+  "portable": {
+    "artifactName": "UltraSweeper-Lite.exe"
+  },
+  "linux": {
+    "target": [
+      "AppImage",
+      "deb"
+    ],
+    "icon": "build/icon.png",
+    "category": "Game",
+    "maintainer": "UltraSweeper",
+    "synopsis": "The classic-look UltraSweeper, light enough for older PCs",
+    "executableName": "ultrasweeper-lite"
+  },
+  "appImage": {
+    "artifactName": "UltraSweeper-Lite.AppImage"
+  },
+  "deb": {
+    "artifactName": "UltraSweeper-Lite.deb"
+  }
+}

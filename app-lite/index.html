@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en" data-edition="lite">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#0b0e15" />
+    <title>UltraSweeper Lite</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="is-loading">
+    <!-- 3D Mode: the match is drawn here, behind the game buttons. -->
+    <div id="world3d" class="world3d"></div>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="12" cy="15.6" r="1.6" fill="currentColor" /></symbol>
+      <symbol id="icon-unlock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M8 10.5V7.5a4 4 0 0 1 7.6-1.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="12" cy="15.6" r="1.6" fill="currentColor" /></symbol>
+      <symbol id="icon-hammer" viewBox="0 0 24 24"><path d="M9.2 4.6 12 1.8l6.4 6.4-2.8 2.8z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" /><path d="M12.6 8.6 3.9 17.3a1.7 1.7 0 0 0 2.4 2.4l8.7-8.7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /><path d="M14 21.2h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
+      <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 2.8 19.5 6v5.6c0 4.6-3.2 8.2-7.5 9.6-4.3-1.4-7.5-5-7.5-9.6V6z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" /><path d="M12 8.2v4.4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /><circle cx="12" cy="15.8" r="1.3" fill="currentColor" /></symbol>
+      <symbol id="icon-trophy" viewBox="0 0 24 24"><path d="M7 3.5h10v5.2a5 5 0 0 1-10 0z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" /><path d="M7 5.5H3.8v1.2A3.3 3.3 0 0 0 7.1 10M17 5.5h3.2v1.2a3.3 3.3 0 0 1-3.3 3.3M12 13.7v3.6M8 20.5h8M9.5 17.3h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      <symbol id="icon-music" viewBox="0 0 24 24"><path d="M9 17.5V5.2l11-2.2v12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /><circle cx="6.4" cy="17.8" r="2.7" fill="currentColor" /><circle cx="17.4" cy="15.6" r="2.7" fill="currentColor" /></symbol>
+      <symbol id="icon-music-off" viewBox="0 0 24 24"><path d="M9 17.5V5.2l11-2.2v12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".45" /><circle cx="6.4" cy="17.8" r="2.7" fill="currentColor" opacity=".45" /><circle cx="17.4" cy="15.6" r="2.7" fill="currentColor" opacity=".45" /><path d="M3.5 3.5l17 17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
+      <symbol id="icon-players" viewBox="0 0 24 24"><circle cx="8.5" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M2.5 20c.4-3.6 2.8-5.6 6-5.6s5.6 2 6 5.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="16.8" cy="7.4" r="2.8" fill="none" stroke="currentColor" stroke-width="2" /><path d="M16.4 13.3c2.9-.3 4.8 1.6 5.2 4.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></symbol>
+      <symbol id="icon-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M9.3 9.4a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.3-2.7 4.1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /><circle cx="12" cy="17.6" r="1.3" fill="currentColor" /></symbol>
+      <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M4.5 20.5c.6-4 3.6-6.4 7.5-6.4s6.9 2.4 7.5 6.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></symbol>
+      <symbol id="icon-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.6-2.4h6.8L17 8h3v11H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="2" /></symbol>
+      <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.2" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7" fill="none" stroke="currentColor" stroke-width="2.2" /></symbol>
+      <symbol id="icon-cube" viewBox="0 0 24 24"><path d="M12 2.8 20 7.2v9.6l-8 4.4-8-4.4V7.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><path d="M4.3 7.4 12 11.7l7.7-4.3M12 11.7v9.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></symbol>
+      <symbol id="icon-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2.4" /><path d="M6 18 18 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></symbol>
+      <symbol id="icon-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2" /><path d="M3.6 12h16.8M12 3.4c2.4 2.4 3.6 5.3 3.6 8.6s-1.2 6.2-3.6 8.6c-2.4-2.4-3.6-5.3-3.6-8.6s1.2-6.2 3.6-8.6z" fill="none" stroke="currentColor" stroke-width="1.8" /></symbol>
+      <symbol id="badge-flag" viewBox="0 0 24 24"><path d="M7 21V4M7 4.5h10l-2.4 3.6L17 11.7H7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" /></symbol>
+      <symbol id="badge-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" fill="currentColor" /></symbol>
+      <symbol id="badge-crown" viewBox="0 0 24 24"><path d="M4 17.5L3 7.5l5 4 4-6.5 4 6.5 5-4-1 10z" fill="currentColor" /><rect x="4.5" y="18.6" width="15" height="2.4" rx="1" fill="currentColor" /></symbol>
+      <symbol id="badge-bolt" viewBox="0 0 24 24"><path d="M13.5 2.5L5 13.5h6l-1.5 8 8.5-11h-6z" fill="currentColor" /></symbol>
+      <symbol id="badge-mine" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.6" fill="currentColor" /><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2.1 2.1M15.9 15.9L18 18M18 6l-2.1 2.1M8.1 15.9L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></symbol>
+      <symbol id="badge-flame" viewBox="0 0 24 24"><path d="M12 2.8c.6 3.4 5.6 5.6 5.6 11.1a5.6 5.6 0 0 1-11.2 0c0-2.6 1.4-4.3 2.6-5.3.1 1.9.9 3 2 3.4-.4-3.6.1-6.6 1-9.2z" fill="currentColor" /></symbol>
+      <symbol id="badge-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M3.6 12h16.8M12 3.6c2.3 2.4 3.4 5.2 3.4 8.4s-1.1 6-3.4 8.4c-2.3-2.4-3.4-5.2-3.4-8.4s1.1-6 3.4-8.4z" fill="none" stroke="currentColor" stroke-width="1.9" /></symbol>
+      <symbol id="badge-stopwatch" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.2" fill="none" stroke="currentColor" stroke-width="2.2" /><path d="M12 13.5V9.6M10 2.8h4M12 2.8v3.4M18.2 6.6l1.4-1.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></symbol>
+      <symbol id="badge-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="2" /><circle cx="12" cy="12" r="4.6" fill="none" stroke="currentColor" stroke-width="2" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /></symbol>
+      <symbol id="badge-helmet" viewBox="0 0 24 24"><path d="M4 16.5a8 8 0 0 1 16 0z" fill="currentColor" /><path d="M10.5 8.6V6.4h3v2.2" fill="none" stroke="currentColor" stroke-width="2" /><rect x="2.5" y="16.5" width="19" height="3" rx="1.2" fill="currentColor" /></symbol>
+      <symbol id="badge-skull" viewBox="0 0 24 24"><path d="M12 3a7.5 7.5 0 0 0-7.5 7.5c0 2.6 1.3 4.6 3 5.8V19a1.5 1.5 0 0 0 1.5 1.5h6A1.5 1.5 0 0 0 16.5 19v-2.7c1.7-1.2 3-3.2 3-5.8A7.5 7.5 0 0 0 12 3z" fill="currentColor" /><circle cx="9" cy="11" r="1.9" fill="#0007" /><circle cx="15" cy="11" r="1.9" fill="#0007" /><path d="M11 15h2" stroke="#0007" stroke-width="1.6" stroke-linecap="round" /></symbol>
+      <symbol id="badge-pencil" viewBox="0 0 24 24"><path d="M4 20l1-4.5L15.5 5a2 2 0 0 1 2.8 0l.7.7a2 2 0 0 1 0 2.8L8.5 19z" fill="currentColor" /><path d="M14 6.5l3.5 3.5" stroke="#0006" stroke-width="1.6" /></symbol>
+      <symbol id="badge-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="2" /><path d="M15.6 8.4l-2 5.2-5.2 2 2-5.2z" fill="currentColor" /></symbol>
+      <symbol id="icon-friends" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.5" fill="none" stroke="currentColor" stroke-width="2.1" /><path d="M2.8 20c.5-3.7 3-5.8 6.2-5.8s5.7 2.1 6.2 5.8" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" /><path d="M18 8.2v6M15 11.2h6" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" /></symbol>
+      <symbol id="icon-computer" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12.5" rx="2" fill="none" stroke="currentColor" stroke-width="2.1" /><path d="M8.5 20.5h7M12 16.5v4" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" /></symbol>
+      <symbol id="icon-gear" viewBox="0 0 24 24"><path d="M10.3 2.8h3.4l.5 2.6 1.9.8 2.2-1.5 2.4 2.4-1.5 2.2.8 1.9 2.6.5v3.4l-2.6.5-.8 1.9 1.5 2.2-2.4 2.4-2.2-1.5-1.9.8-.5 2.6h-3.4l-.5-2.6-1.9-.8-2.2 1.5-2.4-2.4 1.5-2.2-.8-1.9-2.6-.5v-3.4l2.6-.5.8-1.9-1.5-2.2 2.4-2.4 2.2 1.5 1.9-.8z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" /><circle cx="12" cy="12" r="3.3" fill="none" stroke="currentColor" stroke-width="2" /></symbol>
+      <symbol id="icon-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.4-1.2-1.6-1.2-2.8 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><circle cx="7.5" cy="11" r="1.4" fill="currentColor" /><circle cx="10" cy="7" r="1.4" fill="currentColor" /><circle cx="15" cy="7" r="1.4" fill="currentColor" /></symbol>
+    </svg>
+
+    <div id="loading-screen" class="loading-screen" role="status" aria-live="polite">
+      <div class="loading-content">
+        <div class="loading-grid" aria-hidden="true">
+          <span></span><span></span><span></span>
+          <span></span><span class="loading-mine"><img src="assets/mine.svg" alt="" /></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <p class="loading-title">UltraSweeper</p>
+        <div class="xp-boot-logo" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>UltraSweeper<sup>Classic</sup></span></div>
+        <div class="loading-bar"><i id="loading-progress"></i></div>
+        <p id="loading-text" class="loading-text">Loading assets…</p>
+      </div>
+    </div>
+
+    <main class="app-shell">
+      <section id="mode-screen" class="screen mode-screen" aria-labelledby="mode-title">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>UltraSweeper</span></div>
+        <header class="menu-header">
+          <div class="menu-header-start">
+            <span class="brand"><img src="assets/logo.svg" alt="" />UltraSweeper</span>
+          </div>
+          <div class="menu-header-actions">
+            <button id="admin-toggle" class="legacy-toggle admin-toggle hidden" type="button" aria-pressed="false">
+              <svg class="admin-toggle-icon"><use href="#icon-shield" /></svg><span>Admin</span>
+            </button>
+            <button id="menu-maps" class="legacy-toggle maps-toggle icon-toggle" type="button" aria-label="Online Maps" title="Online Maps"><svg class="admin-toggle-icon"><use href="#icon-globe" /></svg></button>
+            <button id="menu-friends" class="legacy-toggle friends-toggle icon-toggle" type="button" aria-label="Friends" title="Friends"><svg class="admin-toggle-icon"><use href="#icon-friends" /></svg><b id="friends-alert" class="friends-alert hidden"></b></button>
+            <button id="menu-profile" class="legacy-toggle profile-toggle icon-toggle" type="button" aria-label="Profile" title="Profile"><svg class="admin-toggle-icon"><use href="#icon-user" /></svg></button>
+            <button id="menu-stats" class="legacy-toggle stats-toggle icon-toggle" type="button" aria-label="Stats" title="Stats"><svg class="admin-toggle-icon"><use href="#icon-trophy" /></svg></button>
+            <button id="menu-help" class="legacy-toggle help-toggle icon-toggle" type="button" aria-label="How to play" title="How to play"><svg class="admin-toggle-icon"><use href="#icon-help" /></svg></button>
+            <button id="menu-options" class="legacy-toggle options-toggle icon-toggle" type="button" aria-label="Settings" title="Settings"><svg class="admin-toggle-icon"><use href="#icon-gear" /></svg></button>
+          </div>
+        </header>
+        <div class="menu-hero">
+          <div class="menu-copy">
+            <h1 id="mode-title">Find the safe<br />path.</h1>
+            <p class="intro">A familiar game, rebuilt around your own rules and visual style.</p>
+          </div>
+          <div class="board-art" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+        <div class="mode-actions" aria-label="Choose game type">
+          <button id="normal-game" class="mode-card normal-card" type="button">
+            <span class="card-number">01</span>
+            <span class="mode-card-title">Normal Minesweeper</span>
+            <small>Classic Beginner</small>
+            <span class="mode-details">9 × 9 <b>·</b> 10 Mines <i><svg><use href="#icon-arrow-right" /></svg></i></span>
+          </button>
+          <button id="custom-game" class="mode-card custom-card" type="button">
+            <span class="card-number">02</span>
+            <span class="mode-card-title">Custom Game</span>
+            <small>Build Your Own Board</small>
+            <span class="mode-details">Size, Mines, Rules <i><svg><use href="#icon-arrow-right" /></svg></i></span>
+          </button>
+          <button id="duel-game" class="mode-card duel-card" type="button">
+            <span class="card-number">03</span>
+            <span class="mode-card-title">2 Players</span>
+            <small>Hide Mines for a Friend</small>
+            <span class="mode-details">Place <b>·</b> Pass <b>·</b> Play <i><svg><use href="#icon-arrow-right" /></svg></i></span>
+          </button>
+        </div>
+        <div class="xp-statusbar" aria-hidden="true"><span>Choose a game to begin</span><span id="xp-status-user">Playing as Guest</span></div>
+      </section>
+
+      <section id="game-screen" class="screen game-screen hidden">
+        <div class="xp-titlebar"><img src="assets/mine.svg" alt="" /><span>UltraSweeper</span><button id="xp-close-game" class="xp-close" type="button" aria-label="Back to games"><svg><use href="#icon-close" /></svg></button></div>
+        <header class="game-header">
+          <button id="back-to-menu" class="text-button" type="button"><svg class="button-icon"><use href="#icon-arrow-left" /></svg>Games</button>
+          <div class="game-actions">
+            <button id="open-admin" class="text-button admin-tools-button hidden" type="button" aria-haspopup="dialog" aria-expanded="false" title="Admin tools"><svg class="button-icon"><use href="#icon-hammer" /></svg>Admin</button>
+            <button id="game-music" class="text-button icon-button music-button" type="button" aria-pressed="true" aria-label="Music" title="Music on"><svg class="button-icon"><use href="#icon-music" /></svg></button>
+            <button id="open-stats" class="text-button icon-button stats-button" type="button" aria-label="Stats" title="Stats"><svg class="button-icon"><use href="#icon-trophy" /></svg></button>
+            <button id="open-settings" class="text-button" type="button"><svg class="button-icon"><use href="#icon-palette" /></svg>Appearance</button>
+          </div>
+        </header>
+        <div id="arena" class="arena">
+          <button id="arena-lock" class="arena-lock" type="button" aria-pressed="true" aria-label="Unlock to move and resize the game" title="Unlock to move and resize"><svg><use href="#icon-lock" /></svg></button>
+        <div class="game-panel">
+          <div class="counter"><span class="counter-label">Mines</span><strong id="mine-counter">010</strong></div>
+          <button id="face-button" class="face-button" type="button" aria-label="Start a new game"><img alt="" /></button>
+          <div class="counter"><span class="counter-label">Time</span><strong id="timer">000</strong></div>
+        </div>
+        <p id="game-status" class="game-status" aria-live="polite">Click any tile to start.</p>
+        <div id="duel-bar" class="duel-bar hidden">
+          <button id="duel-secondary" class="secondary-button" type="button">Clear</button>
+          <button id="duel-primary" class="primary-button" type="button">Done, pass it on</button>
+        </div>
+        <div id="board-wrap" class="board-wrap">
+          <div id="board" class="board" role="grid" aria-label="UltraSweeper board"></div>
+        </div>
+        <p class="game-hint">Right-click or F to flag · Click a number to clear its neighbors · R for a new game</p>
+        <span class="arena-grip" aria-hidden="true"></span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Legacy look: a decorative Windows XP-style taskbar (a picture, nothing in it is clickable). -->
+    <footer class="xp-taskbar" aria-hidden="true">
+      <svg width="0" height="0" style="position: absolute">
+        <symbol id="xp-globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.6" fill="#2f8fe8" stroke="#0c4f9e" /><path d="M1.6 8h12.8M8 1.4c-2.4 2-2.4 11.2 0 13.2M8 1.4c2.4 2 2.4 11.2 0 13.2M2.6 4.6h10.8M2.6 11.4h10.8" fill="none" stroke="#d6efff" stroke-width=".9" /></symbol>
+        <symbol id="xp-folder" viewBox="0 0 16 16"><path d="M1 4.2h5l1.2 1.4H15v8.2H1z" fill="#f2c94c" stroke="#a87b12" stroke-width=".8" /><path d="M1 7h14v6.8H1z" fill="#ffe08a" stroke="#a87b12" stroke-width=".8" /></symbol>
+        <symbol id="xp-mail" viewBox="0 0 16 16"><rect x="1.2" y="3.4" width="13.6" height="9.4" rx="1" fill="#fff" stroke="#3a6fb5" /><path d="M1.6 4l6.4 5 6.4-5" fill="none" stroke="#3a6fb5" /></symbol>
+        <symbol id="xp-media" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.6" fill="#f08a1c" stroke="#9a4c00" /><path d="M6.4 5.2v5.6L11 8z" fill="#fff" /></symbol>
+        <symbol id="xp-computer" viewBox="0 0 16 16"><rect x="1.5" y="2" width="13" height="9" rx="1" fill="#cfe3f7" stroke="#3d5f8a" /><rect x="3" y="3.4" width="10" height="6.2" fill="#3a8be0" /><path d="M5.5 13.6h5M8 11v2.6" stroke="#3d5f8a" stroke-width="1.3" /></symbol>
+        <symbol id="xp-notepad" viewBox="0 0 16 16"><rect x="3" y="1.5" width="10" height="13" fill="#fff" stroke="#556" /><rect x="3" y="1.5" width="10" height="2.2" fill="#5a8fd8" /><path d="M5 6.4h6M5 8.6h6M5 10.8h4" stroke="#889" /></symbol>
+        <symbol id="xp-search" viewBox="0 0 16 16"><circle cx="6.6" cy="6.6" r="4.4" fill="#e8f4ff" stroke="#2b5d9b" stroke-width="1.4" /><path d="M9.8 9.8l4.4 4.4" stroke="#7a4b14" stroke-width="2.2" stroke-linecap="round" /></symbol>
+        <symbol id="xp-speaker" viewBox="0 0 16 16"><path d="M2 6h3l4-3.2v10.4L5 10H2z" fill="#fff" stroke="#24456e" stroke-width=".7" /><path d="M11 5.4c1.2 1.4 1.2 3.8 0 5.2M12.6 3.8c2 2.4 2 6 0 8.4" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round" /></symbol>
+        <symbol id="xp-network" viewBox="0 0 16 16"><rect x="1" y="3" width="7" height="5.4" fill="#cfe3f7" stroke="#24456e" stroke-width=".7" /><rect x="8" y="7.6" width="7" height="5.4" fill="#cfe3f7" stroke="#24456e" stroke-width=".7" /><rect x="2" y="4" width="5" height="3.4" fill="#3a8be0" /><rect x="9" y="8.6" width="5" height="3.4" fill="#3a8be0" /></symbol>
+        <symbol id="xp-shield" viewBox="0 0 16 16"><path d="M8 1.2l5.6 2.2v4.2c0 3.4-2.4 5.8-5.6 7.2-3.2-1.4-5.6-3.8-5.6-7.2V3.4z" fill="#3c8be6" stroke="#123f7a" stroke-width=".7" /><path d="M5 8l2.1 2.1L11.2 6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></symbol>
+      </svg>
+      <span class="xp-start"><img src="assets/mine.svg" alt="" /><span>start</span></span>
+      <span class="xp-quicklaunch">
+        <svg><use href="#xp-globe" /></svg>
+        <svg><use href="#xp-folder" /></svg>
+        <svg><use href="#xp-mail" /></svg>
+        <svg><use href="#xp-media" /></svg>
+      </span>
+      <span class="xp-windows">
+        <span class="xp-window"><svg><use href="#xp-search" /></svg>Search Results</span>
+        <span class="xp-window"><svg><use href="#xp-folder" /></svg>My Documents</span>
+        <span class="xp-window"><svg><use href="#xp-computer" /></svg>My Computer</span>
+        <span class="xp-window"><svg><use href="#xp-notepad" /></svg>Untitled - Notepad</span>
+      </span>
+      <span class="xp-tray">
+        <svg class="xp-tray-icon"><use href="#xp-shield" /></svg>
+        <svg class="xp-tray-icon"><use href="#xp-network" /></svg>
+        <svg class="xp-tray-icon"><use href="#xp-speaker" /></svg>
+        <time id="xp-clock"></time>
+      </span>
+    </footer>
+
+    <section id="custom-screen" class="dialog-screen hidden" aria-labelledby="custom-title" role="dialog" aria-modal="true">
+      <form id="custom-form" class="dialog-card" novalidate>
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Custom Game</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">New board</p>
+        <h2 id="custom-title">Custom Game</h2>
+        <div class="preset-row" role="group" aria-label="Presets">
+          <button class="preset-button" type="button" data-preset="16,16,40"><b>Medium</b><span>16 × 16</span><small>40 mines</small></button>
+          <button class="preset-button" type="button" data-preset="30,16,99"><b>Hard</b><span>30 × 16</span><small>99 mines</small></button>
+          <button class="preset-button" type="button" data-preset="30,24,180"><b>Insane</b><span>30 × 24</span><small>180 mines</small></button>
+        </div>
+        <div class="form-grid">
+          <label>Width<input id="board-width" type="number" min="5" max="50" value="16" required /></label>
+          <label>Height<input id="board-height" type="number" min="5" max="50" value="16" required /></label>
+          <label class="wide">Mines<input id="mine-count" type="number" min="1" value="40" required /></label>
+        </div>
+        <p id="custom-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">Start custom game</button>
+      </form>
+    </section>
+
+    <section id="duel-screen" class="dialog-screen hidden" aria-labelledby="duel-title" role="dialog" aria-modal="true">
+      <form id="duel-form" class="dialog-card" novalidate>
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>2 Players</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Player 1</p>
+        <h2 id="duel-title">2 Player Match</h2>
+        <p class="settings-intro">Pick the board size, then tap tiles to hide the mines. When you're done, pass the device: Player 2 has to clear your board.</p>
+        <div class="form-grid">
+          <label>Width<input id="duel-width" type="number" min="5" max="50" value="9" required /></label>
+          <label>Height<input id="duel-height" type="number" min="5" max="50" value="9" required /></label>
+        </div>
+        <p id="duel-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">Place the mines</button>
+      </form>
+    </section>
+
+    <section id="pass-screen" class="dialog-screen pass-screen hidden" aria-labelledby="pass-title" role="dialog" aria-modal="true">
+      <div class="dialog-card pass-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Pass the device</span></div>
+        <p class="eyebrow">Mines hidden</p>
+        <svg class="pass-icon" aria-hidden="true"><use href="#icon-players" /></svg>
+        <h2 id="pass-title">Pass It to Player 2</h2>
+        <p id="pass-summary" class="settings-intro"></p>
+        <div class="pass-actions">
+          <button id="pass-back" class="secondary-button" type="button">Edit mines</button>
+          <button id="pass-start" class="primary-button" type="button">I'm Player 2, start</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="options-screen" class="dialog-screen hidden" aria-labelledby="options-title" role="dialog" aria-modal="true">
+      <div class="dialog-card options-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Settings</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Preferences</p>
+        <h2 id="options-title">Settings</h2>
+        <div class="options-list">
+          <button id="music-toggle" class="legacy-toggle option-row" type="button" aria-pressed="true">
+            <svg class="admin-toggle-icon"><use href="#icon-music" /></svg><span>Music</span><b>On</b>
+          </button>
+          <label class="volume-row" for="music-volume">
+            <span>Volume</span>
+            <input id="music-volume" type="range" min="0" max="100" step="5" value="100" />
+            <output id="music-volume-value" for="music-volume">100%</output>
+          </label>
+          <button id="threed-toggle" class="legacy-toggle option-row" type="button" aria-pressed="false">
+            <svg class="admin-toggle-icon"><use href="#icon-cube" /></svg><span>3D Mode</span><b>Off</b>
+          </button>
+          <button id="menu-appearance" class="legacy-toggle option-row" type="button">
+            <svg class="admin-toggle-icon"><use href="#icon-palette" /></svg><span>Appearance</span><b>Open</b>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="profile-screen" class="dialog-screen hidden" aria-labelledby="profile-name" role="dialog" aria-modal="true">
+      <div class="dialog-card profile-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Profile</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <div class="profile-head">
+          <button id="profile-picture" class="profile-picture" type="button" aria-label="Change profile picture" title="Change profile picture">
+            <img id="profile-image" class="hidden" alt="" /><span id="profile-initial">G</span>
+            <i aria-hidden="true"><svg><use href="#icon-camera" /></svg></i>
+          </button>
+          <input id="profile-file" type="file" accept="image/*" hidden />
+          <div class="profile-id">
+            <p id="profile-eyebrow" class="eyebrow">Your Profile</p>
+            <div class="profile-name-row">
+              <h2 id="profile-name">Guest</h2>
+              <span id="profile-admin" class="profile-admin hidden"><svg><use href="#icon-trophy" /></svg>Admin</span>
+              <span id="profile-banned" class="profile-banned hidden"><svg><use href="#icon-ban" /></svg>Banned</span>
+            </div>
+            <p id="profile-status" class="profile-status">Progress only saved on this device</p>
+          </div>
+        </div>
+        <p id="profile-picture-error" class="form-error profile-picture-error" role="alert"></p>
+        <label id="profile-bio-edit" class="profile-bio" for="profile-bio">
+          <span>Bio <small id="profile-bio-count">0/150</small></span>
+          <textarea id="profile-bio" rows="2" maxlength="150" placeholder="Say something about yourself…"></textarea>
+        </label>
+        <p id="profile-bio-text" class="profile-bio-text hidden"></p>
+        <div class="profile-stats">
+          <div><b id="profile-won">0</b><span>Matches Won</span></div>
+          <div><b id="profile-streak">0</b><span>Best Streak</span></div>
+          <div class="private"><b id="profile-played">0</b><span><svg><use href="#icon-lock" /></svg>Played</span></div>
+          <div class="private"><b id="profile-rate">0%</b><span><svg><use href="#icon-lock" /></svg>Win Rate</span></div>
+        </div>
+        <p id="profile-private-note" class="profile-private-note"><svg><use href="#icon-lock" /></svg><span>Only you can see Played and Win Rate.</span></p>
+        <p class="profile-label">Badges <small id="profile-badge-count">0/0</small></p>
+        <div id="profile-badges" class="profile-badges"></div>
+        <p id="profile-badge-info" class="profile-badge-info">Tap a badge to see how to earn it.</p>
+        <p class="profile-label">Best Times</p>
+        <div id="profile-times" class="profile-times"></div>
+        <div class="profile-actions">
+          <button id="profile-back" class="secondary-button hidden" type="button">Back to friends</button>
+          <button id="profile-add-admin" class="text-button hidden" type="button">Add admin to profile</button>
+          <button id="profile-moderate" class="text-button hidden" type="button">Ban players</button>
+          <button id="profile-ban" class="secondary-button danger-button hidden" type="button">Ban player</button>
+          <button id="profile-remove-picture" class="text-button hidden" type="button">Remove picture</button>
+          <button id="profile-account" class="secondary-button" type="button">Log Out</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="maps-screen" class="dialog-screen hidden" aria-labelledby="maps-title" role="dialog" aria-modal="true">
+      <div class="settings-card maps-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Online Maps</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Community</p>
+        <h2 id="maps-title"><svg class="admin-title-icon maps-title-icon"><use href="#icon-globe" /></svg>Online Maps</h2>
+        <p class="settings-intro">Play boards other players built, or make your own and share its code.</p>
+        <form id="maps-code-form" class="maps-code" novalidate>
+          <input id="maps-code" type="text" placeholder="Map code, like K7Q2XM" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Map code" />
+          <button class="primary-button" type="submit">Play</button>
+        </form>
+        <p id="maps-error" class="form-error" role="alert"></p>
+        <div class="maps-tabs" role="tablist" aria-label="Sort maps">
+          <button class="stats-tab" type="button" role="tab" data-order="createdAt" aria-selected="true">Newest</button>
+          <button class="stats-tab" type="button" role="tab" data-order="plays" aria-selected="false">Most Played</button>
+        </div>
+        <ol id="maps-list" class="maps-list"></ol>
+        <p id="maps-empty" class="stats-empty hidden"></p>
+        <div class="maps-footer">
+          <button id="maps-create" class="secondary-button" type="button">Create a Map</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="map-new-screen" class="dialog-screen hidden" aria-labelledby="map-new-title" role="dialog" aria-modal="true">
+      <form id="map-new-form" class="dialog-card" novalidate>
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>New Map</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Map Maker</p>
+        <h2 id="map-new-title">Create a Map</h2>
+        <p class="settings-intro">Name your map and pick its size. Then tap tiles to place the mines and publish it for everyone.</p>
+        <div class="form-grid">
+          <label class="wide">Map name<input id="map-name" type="text" maxlength="30" placeholder="My tricky board" autocomplete="off" required /></label>
+          <label>Width<input id="map-width" type="number" min="5" max="50" value="16" required /></label>
+          <label>Height<input id="map-height" type="number" min="5" max="50" value="16" required /></label>
+        </div>
+        <p id="map-new-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">Place the mines</button>
+      </form>
+    </section>
+
+    <section id="map-done-screen" class="dialog-screen hidden" aria-labelledby="map-done-title" role="dialog" aria-modal="true">
+      <div class="dialog-card map-done-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Map Published</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">It's online</p>
+        <h2 id="map-done-title">Map Published!</h2>
+        <p class="settings-intro">Anyone can play it from Online Maps, or straight away with this code:</p>
+        <p id="map-done-code" class="map-done-code"></p>
+        <div class="tutorial-actions">
+          <button id="map-done-copy" class="secondary-button" type="button">Copy code</button>
+          <button id="map-done-maps" class="primary-button" type="button">See Online Maps</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="friends-screen" class="dialog-screen hidden" aria-labelledby="friends-title" role="dialog" aria-modal="true">
+      <div class="settings-card friends-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Friends</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Social</p>
+        <h2 id="friends-title"><svg class="admin-title-icon friends-title-icon"><use href="#icon-friends" /></svg>Friends</h2>
+        <div id="friends-guest" class="friends-guest hidden">
+          <p class="settings-intro">Log in to add friends and see their profiles.</p>
+          <button id="friends-login" class="primary-button" type="button">Sign Up or Log In</button>
+        </div>
+        <div id="friends-main">
+          <form id="friend-add-form" class="maps-code" novalidate>
+            <input id="friend-name" type="text" placeholder="Friend's username" maxlength="20" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Friend's username" />
+            <button class="primary-button" type="submit">Send Request</button>
+          </form>
+          <p id="friends-error" class="form-error" role="alert"></p>
+          <div id="friend-requests-block" class="hidden">
+            <p class="profile-label">Friend Requests</p>
+            <ol id="friend-requests" class="maps-list"></ol>
+          </div>
+          <p class="profile-label">Your Friends <small id="friends-total"></small></p>
+          <ol id="friends-list" class="maps-list"></ol>
+          <p id="friends-empty" class="stats-empty hidden"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="ban-screen" class="dialog-screen hidden" aria-labelledby="ban-title" role="dialog" aria-modal="true">
+      <div class="settings-card friends-card ban-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Ban Players</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Admins only</p>
+        <h2 id="ban-title"><svg class="admin-title-icon ban-title-icon"><use href="#icon-ban" /></svg>Ban Players</h2>
+        <p class="settings-intro">A banned player is logged out and can't log in, save progress, share maps or add friends until an admin lifts the ban.</p>
+        <form id="ban-form" class="ban-form" novalidate>
+          <input id="ban-name" type="text" placeholder="Username" maxlength="20" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Username to ban" />
+          <input id="ban-reason" type="text" placeholder="Reason (optional)" maxlength="100" autocomplete="off" aria-label="Reason" />
+          <button class="primary-button danger-button" type="submit">Ban</button>
+        </form>
+        <p id="ban-error" class="form-error" role="alert"></p>
+        <p class="profile-label">Banned Players <small id="ban-total"></small></p>
+        <ol id="ban-list" class="maps-list"></ol>
+        <p id="ban-empty" class="stats-empty hidden"></p>
+      </div>
+    </section>
+
+    <section id="account-screen" class="dialog-screen hidden" aria-labelledby="account-title" role="dialog" aria-modal="true">
+      <div class="dialog-card account-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Account</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <div id="account-choice">
+          <p class="eyebrow">Welcome to UltraSweeper</p>
+          <svg class="pass-icon" aria-hidden="true"><use href="#icon-user" /></svg>
+          <h2 id="account-title">Save Your Progress</h2>
+          <p class="settings-intro">With an account, your stats and settings save automatically. Log in on any device and pick up where you left off.</p>
+          <div class="account-actions">
+            <button id="account-signup" class="primary-button" type="button">Sign Up</button>
+            <button id="account-login" class="secondary-button" type="button">Log In</button>
+            <button id="account-guest" class="text-button" type="button">Play as Guest</button>
+          </div>
+        </div>
+        <form id="account-form" class="hidden" novalidate>
+          <p id="account-form-eyebrow" class="eyebrow">New Account</p>
+          <h2 id="account-form-title">Create Account</h2>
+          <div class="form-grid">
+            <label class="wide">Username<input id="account-username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20" required /></label>
+            <label class="wide">Password<input id="account-password" type="password" autocomplete="new-password" required /></label>
+          </div>
+          <p id="account-error" class="form-error" role="alert"></p>
+          <div class="tutorial-actions">
+            <button id="account-back" class="secondary-button" type="button">Back</button>
+            <button id="account-submit" class="primary-button" type="submit">Sign Up</button>
+          </div>
+          <p class="account-switch"><span id="account-switch-text">Already have an account?</span> <button id="account-switch" class="text-button" type="button">Log In</button></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="tutorial-screen" class="dialog-screen hidden" aria-labelledby="tutorial-title" role="dialog" aria-modal="true">
+      <div class="dialog-card tutorial-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>How to play</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <div id="tutorial-welcome" class="tutorial-welcome">
+          <p class="eyebrow">Welcome</p>
+          <img class="tutorial-hero" src="assets/face.svg" alt="" />
+          <h2 id="tutorial-title">Welcome to UltraSweeper!</h2>
+          <p class="settings-intro">Do you already know how to play Minesweeper?</p>
+          <div class="tutorial-actions">
+            <button id="tutorial-no" class="secondary-button" type="button">No, show me how</button>
+            <button id="tutorial-yes" class="primary-button" type="button">Yes, let's play</button>
+          </div>
+        </div>
+        <div id="tutorial-steps" class="tutorial-steps hidden">
+          <p id="tutorial-count" class="eyebrow"></p>
+          <h2 id="tutorial-step-title"></h2>
+          <div id="tutorial-board" class="tutorial-board" aria-hidden="true"></div>
+          <p id="tutorial-text" class="settings-intro tutorial-text"></p>
+          <div id="tutorial-dots" class="tutorial-dots" aria-hidden="true"></div>
+          <div class="tutorial-actions">
+            <button id="tutorial-back" class="secondary-button" type="button">Back</button>
+            <button id="tutorial-next" class="primary-button" type="button">Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="admin-screen" class="dialog-screen hidden" aria-labelledby="admin-title" role="dialog" aria-modal="true">
+      <form id="admin-form" class="dialog-card admin-login" novalidate>
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/mine.svg" alt="" /><span>Admin Access</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Restricted</p>
+        <h2 id="admin-title"><svg class="admin-title-icon"><use href="#icon-shield" /></svg>Admin Access</h2>
+        <p class="settings-intro">Enter the admin password to unlock the in-game tools.</p>
+        <div class="form-grid">
+          <label class="wide">Password<input id="admin-password" type="password" autocomplete="off" spellcheck="false" required /></label>
+        </div>
+        <p id="admin-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">Unlock</button>
+      </form>
+    </section>
+
+    <aside id="admin-panel" class="admin-panel hidden" role="dialog" aria-labelledby="admin-panel-title">
+      <div class="xp-titlebar admin-panel-titlebar"><svg><use href="#icon-hammer" /></svg><span>Admin Tools</span></div>
+      <header class="admin-panel-header">
+        <span class="admin-panel-badge"><svg><use href="#icon-hammer" /></svg></span>
+        <div><p class="eyebrow">Admin</p><h3 id="admin-panel-title">Cheats</h3></div>
+        <button id="close-admin" class="close-button" type="button" aria-label="Close admin tools"><svg><use href="#icon-close" /></svg></button>
+      </header>
+      <div class="admin-section">
+        <button class="admin-switch" type="button" data-cheat="xray" aria-pressed="false"><span><b>X-ray vision</b><small>See every hidden mine</small></span><i></i></button>
+        <button class="admin-switch" type="button" data-cheat="shield" aria-pressed="false"><span><b>Mine shield</b><small>Mines get flagged instead of exploding</small></span><i></i></button>
+        <button class="admin-switch" type="button" data-cheat="freeze" aria-pressed="false"><span><b>Freeze timer</b><small>Stop the clock while you think</small></span><i></i></button>
+      </div>
+      <div class="admin-actions">
+        <button class="admin-action" type="button" data-action="safe">Reveal a safe tile</button>
+        <button class="admin-action" type="button" data-action="flags">Flag all mines</button>
+        <button class="admin-action" type="button" data-action="time">Reset timer</button>
+        <button class="admin-action admin-action-win" type="button" data-action="win">Win instantly</button>
+      </div>
+      <p id="admin-note" class="admin-note" role="status"></p>
+      <button id="lock-admin" class="admin-lock-button" type="button">Lock admin<small>The password will be needed again</small></button>
+    </aside>
+
+    <section id="stats-screen" class="dialog-screen hidden" aria-labelledby="stats-title" role="dialog" aria-modal="true">
+      <div class="settings-card stats-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/face-win.svg" alt="" /><span>Statistics</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Your Records</p>
+        <h2 id="stats-title"><svg class="admin-title-icon stats-title-icon"><use href="#icon-trophy" /></svg>Stats</h2>
+        <div id="stats-overview" class="stats-overview"></div>
+        <div id="stats-boards" class="stats-boards" role="tablist" aria-label="Board"></div>
+        <div class="stats-board">
+          <div class="stats-hero">
+            <svg class="stats-hero-icon" aria-hidden="true"><use href="#icon-trophy" /></svg>
+            <div><span>Best Time</span><strong id="stats-best">—</strong><small id="stats-board-name"></small></div>
+          </div>
+          <div id="stats-summary" class="stats-summary"></div>
+        </div>
+        <p class="stats-label">Top 10 Times</p>
+        <ol id="stats-times" class="stats-times"></ol>
+        <p id="stats-empty" class="stats-empty hidden">No wins on this board yet. Clear one to set a time!</p>
+        <div class="stats-footer">
+          <button id="clear-stats" class="text-button stats-clear" type="button">Clear this board</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="settings-screen" class="dialog-screen hidden" aria-labelledby="settings-title" role="dialog" aria-modal="true">
+      <div class="settings-card">
+        <div class="xp-titlebar" aria-hidden="true"><img src="assets/face.svg" alt="" /><span>Appearance</span></div>
+        <button class="close-button" type="button" data-close aria-label="Close"><svg><use href="#icon-close" /></svg></button>
+        <p class="eyebrow">Appearance</p>
+        <h2 id="settings-title">Your Asset Pack</h2>
+        <p class="settings-intro">Use a PNG for any item. Your choices are stored on this device.</p>
+        <section class="accent-picker" aria-labelledby="accent-title">
+          <div>
+            <span id="accent-title" class="accent-title">Interface color</span>
+            <span class="accent-hint">Choose the accent used across the modern UI.</span>
+          </div>
+          <div class="accent-actions">
+            <input id="accent-color" class="accent-wheel" type="color" value="#ffffff" aria-label="Choose interface color" />
+            <button id="reset-accent" class="reset-accent" type="button">Default</button>
+          </div>
+        </section>
+        <section class="song-picker" aria-labelledby="song-title">
+          <div class="song-heading">
+            <svg class="song-icon"><use href="#icon-music" /></svg>
+            <div>
+              <span id="song-title" class="accent-title">Song</span>
+              <span id="song-current" class="accent-hint">Built-in tune</span>
+            </div>
+          </div>
+          <div class="song-link-row">
+            <input id="song-link" class="song-link" type="url" inputmode="url" placeholder="Paste a YouTube link" autocomplete="off" spellcheck="false" />
+            <button id="song-link-use" class="upload-button" type="button">Use link</button>
+          </div>
+          <div class="song-buttons">
+            <input id="song-file" type="file" accept="audio/*,.mp3" hidden />
+            <button id="song-file-pick" class="upload-button" type="button">Choose MP3 file</button>
+          </div>
+          <p id="song-error" class="form-error song-error" role="alert"></p>
+        </section>
+        <div id="asset-list" class="asset-list"></div>
+        <p id="asset-error" class="form-error" role="alert"></p>
+        <div class="settings-footer">
+          <button id="restore-assets" class="secondary-button" type="button">Restore default assets</button>
+        </div>
+      </div>
+    </section>
+    <div id="platinum" class="platinum hidden" role="status" aria-live="polite">
+      <div class="platinum-toast">
+        <div class="platinum-inner">
+          <div class="platinum-art" aria-hidden="true"><svg class="platinum-art-trophy" viewBox="0 0 100 100" aria-hidden="true">
+                <defs>
+                  <radialGradient id="gold-orb" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#fff2b0" /><stop offset=".4" stop-color="#e6a91a" /><stop offset="1" stop-color="#5e3b00" /></radialGradient>
+                  <linearGradient id="gold-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe680" /><stop offset=".5" stop-color="#c88a0c" /><stop offset="1" stop-color="#ffd54a" /></linearGradient>
+                </defs>
+                <path d="M50 8V92M8 50H92M20 20L80 80M80 20L20 80" stroke="#c08a1a" stroke-width="7" stroke-linecap="round" />
+                <g fill="url(#gold-metal)" stroke="#6b4400" stroke-width="2"><circle cx="50" cy="9" r="5" /><circle cx="50" cy="91" r="5" /><circle cx="9" cy="50" r="5" /><circle cx="91" cy="50" r="5" /></g>
+                <circle cx="50" cy="50" r="29" fill="url(#gold-orb)" stroke="#4a2e00" stroke-width="3" />
+                <ellipse cx="40" cy="38" rx="9" ry="6" fill="#fff" opacity=".8" transform="rotate(-35 40 38)" />
+                <circle cx="61" cy="62" r="3" fill="#ff5a5a" />
+              </svg></div>
+          <div class="platinum-text">
+            <p class="platinum-kicker">You earned a trophy!</p>
+            <p class="platinum-title">
+              <svg class="platinum-icon" viewBox="0 0 100 100" aria-hidden="true">
+                <path d="M50 8V92M8 50H92M20 20L80 80M80 20L20 80" stroke="#c08a1a" stroke-width="7" stroke-linecap="round" />
+                <g fill="url(#gold-metal)" stroke="#6b4400" stroke-width="2"><circle cx="50" cy="9" r="5" /><circle cx="50" cy="91" r="5" /><circle cx="9" cy="50" r="5" /><circle cx="91" cy="50" r="5" /></g>
+                <circle cx="50" cy="50" r="29" fill="url(#gold-orb)" stroke="#4a2e00" stroke-width="3" />
+                <ellipse cx="40" cy="38" rx="9" ry="6" fill="#fff" opacity=".8" transform="rotate(-35 40 38)" />
+                <circle cx="61" cy="62" r="3" fill="#ff5a5a" />
+              </svg>
+              <span>Admin</span>
+            </p>
+            <p class="platinum-sub">Golden Mine · UltraSweeper</p>
+          </div>
+          <i class="platinum-gleam" aria-hidden="true"></i>
+        </div>
+      </div>
+      <i class="platinum-spark" style="--tx: -70px; --ty: -38px; --d: .55s"></i>
+      <i class="platinum-spark" style="--tx: -20px; --ty: -52px; --d: .62s"></i>
+      <i class="platinum-spark" style="--tx: 60px; --ty: -46px; --d: .7s"></i>
+      <i class="platinum-spark" style="--tx: 120px; --ty: -30px; --d: .78s"></i>
+      <i class="platinum-spark" style="--tx: -84px; --ty: 30px; --d: .66s"></i>
+      <i class="platinum-spark" style="--tx: 30px; --ty: 54px; --d: .74s"></i>
+      <i class="platinum-spark" style="--tx: 110px; --ty: 40px; --d: .6s"></i>
+      <i class="platinum-spark" style="--tx: -10px; --ty: 48px; --d: .82s"></i>
+    </div>
+    <script src="music.js"></script>
+    <script src="cloud.js"></script>
+    <script src="world3d.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,11 +1,13 @@
 {
   "name": "ultrasweeper-pc-build",
   "private": true,
-  "description": "Packs the desktop game into UltraSweeper.exe (Windows) and an AppImage and .deb (Linux).",
+  "description": "Packs the desktop game into UltraSweeper and UltraSweeper Lite for Windows (exe) and Linux (AppImage and .deb).",
   "scripts": {
     "sync": "node scripts/sync-app.js",
     "build": "electron-builder --win portable --x64 --publish never",
-    "build:linux": "electron-builder --linux AppImage deb --x64 --publish never"
+    "build:linux": "electron-builder --linux AppImage deb --x64 --publish never",
+    "build:lite": "electron-builder --config lite.config.json --win portable --x64 --publish never",
+    "build:lite:linux": "electron-builder --config lite.config.json --linux AppImage deb --x64 --publish never"
   },
   "devDependencies": {
     "electron-builder": "24.13.3"
@@ -31,7 +33,10 @@
       "artifactName": "UltraSweeper.exe"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "icon": "build/icon.png",
       "category": "Game",
       "maintainer": "UltraSweeper",

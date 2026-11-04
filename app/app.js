@@ -29,10 +29,11 @@ const faceImage = faceButton.querySelector('img');
 const assetList = document.querySelector('#asset-list');
 const assetError = document.querySelector('#asset-error');
 const assetStorageKey = 'offline-minesweeper-assets-v1';
-const legacyStorageKey = 'offline-minesweeper-legacy-mode-v1';
+// Two apps share this code: UltraSweeper (modern look) and UltraSweeper Lite (the classic XP look, for low-end devices).
+// Lite's copy of index.html says so with <html data-edition="lite">.
+const liteEdition = document.documentElement.dataset.edition === 'lite';
 const accentStorageKey = 'offline-minesweeper-accent-v1';
 const arenaStorageKey = 'offline-minesweeper-arena-v1';
-const legacyToggle = document.querySelector('#legacy-toggle');
 const musicStorageKey = 'offline-minesweeper-music-v1';
 const musicToggle = document.querySelector('#music-toggle');
 const volumeStorageKey = 'offline-minesweeper-volume-v1';
@@ -96,7 +97,7 @@ const badgesStorageKey = 'offline-minesweeper-badges-v1';
 const threeDStorageKey = 'offline-minesweeper-3d-v1';
 const threeDToggle = document.querySelector('#threed-toggle');
 const worldElement = document.querySelector('#world3d');
-const syncedKeys = [badgesStorageKey, profileStorageKey, statsStorageKey, legacyStorageKey, threeDStorageKey, accentStorageKey, musicStorageKey, volumeStorageKey, tutorialStorageKey];
+const syncedKeys = [badgesStorageKey, profileStorageKey, statsStorageKey, threeDStorageKey, accentStorageKey, musicStorageKey, volumeStorageKey, tutorialStorageKey];
 const accountButton = document.querySelector('#profile-account');
 const bioInput = document.querySelector('#profile-bio');
 // Profile picture and bio; they travel with the account like the stats do.
@@ -163,7 +164,7 @@ const defaults = {
 };
 
 let assets = loadAssets();
-let legacyMode = storageGet(legacyStorageKey) === 'true';
+let legacyMode = liteEdition;
 let threeDMode = storageGet(threeDStorageKey) === 'true';
 let accentColor = storageGet(accentStorageKey) || defaultAccent;
 let musicOn = storageGet(musicStorageKey) !== 'false';
@@ -193,6 +194,12 @@ let statsBoard = '9x9x10';
 // Largest scale that still fits the window; not saved, so the player's size comes back when there is room.
 let arenaFit = Infinity;
 
+if (liteEdition) {
+  document.title = 'UltraSweeper Lite';
+  document.querySelectorAll('.xp-titlebar span').forEach(title => {
+    if (title.textContent === 'UltraSweeper') title.textContent = 'UltraSweeper Lite';
+  });
+}
 applyLegacyMode();
 applyThreeDMode();
 applyAccentColor();
@@ -406,7 +413,6 @@ document.querySelector('#restore-assets').addEventListener('click', () => {
   resetSong();
   refreshGameAppearance();
 });
-legacyToggle.addEventListener('click', () => setLegacyMode(!legacyMode));
 threeDToggle.addEventListener('click', () => setThreeDMode(!threeDMode));
 musicToggle.addEventListener('click', () => setMusic(!musicOn));
 volumeInput.addEventListener('input', () => {
@@ -728,7 +734,6 @@ function setLegacyMode(value) {
   if (value === legacyMode) return;
   const change = () => {
     legacyMode = value;
-    storageSet(legacyStorageKey, String(legacyMode));
     applyLegacyMode();
     if (currentScreen === 'game') keepArenaOnScreen();
   };
@@ -1687,7 +1692,6 @@ function reloadProgress() {
   badges = loadBadges();
   checkBadges(true);
   if (openDialogName === 'profile') renderProfile();
-  legacyMode = storageGet(legacyStorageKey) === 'true';
   threeDMode = storageGet(threeDStorageKey) === 'true';
   accentColor = storageGet(accentStorageKey) || defaultAccent;
   musicOn = storageGet(musicStorageKey) !== 'false';
@@ -2611,8 +2615,6 @@ async function submitAccount(event) {
 
 function applyLegacyMode() {
   document.body.classList.toggle('legacy-mode', legacyMode);
-  legacyToggle.setAttribute('aria-pressed', String(legacyMode));
-  legacyToggle.querySelector('b').textContent = legacyMode ? 'On' : 'Off';
   window.UltraMusic.setTrack(legacyMode ? 'legacy' : 'modern');
 }
 

@@ -15,3 +15,8 @@ if (main.includes('TEST-HARNESS')) throw new Error('electron-main.js still conta
 fs.rmSync(target, { recursive: true, force: true });
 fs.cpSync(source, target, { recursive: true });
 console.log(`Copied game from ${source} to ${target}`);
+
+// UltraSweeper Lite: the same game in the classic look only, built as its own app.
+const { makeLite } = require(path.resolve(source, '..', '..', 'make-lite.js'));
+makeLite(source, path.resolve(__dirname, '..', 'app-lite'));
+console.log('Made UltraSweeper Lite in app-lite');
