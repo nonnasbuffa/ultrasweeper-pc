@@ -164,7 +164,8 @@ const defaults = {
 };
 
 let assets = loadAssets();
-let legacyMode = liteEdition;
+// The old XP look is retired; Lite is the normal app with an old-school black style (body.lite-mode).
+let legacyMode = false;
 let threeDMode = storageGet(threeDStorageKey) === 'true';
 let accentColor = storageGet(accentStorageKey) || defaultAccent;
 let musicOn = storageGet(musicStorageKey) !== 'false';
@@ -196,9 +197,9 @@ let arenaFit = Infinity;
 
 if (liteEdition) {
   document.title = 'UltraSweeper Lite';
-  document.querySelectorAll('.xp-titlebar span').forEach(title => {
-    if (title.textContent === 'UltraSweeper') title.textContent = 'UltraSweeper Lite';
-  });
+  document.body.classList.add('lite-mode');
+  const brand = document.querySelector('.brand');
+  brand.lastChild.textContent = 'UltraSweeper Lite';
 }
 applyLegacyMode();
 applyThreeDMode();
@@ -2647,7 +2648,7 @@ function syncThreeD() {
       else reveal(index);
     },
     flag: index => toggleFlag(index),
-    legacy: () => legacyMode,
+    legacy: () => legacyMode || liteEdition,
     touch: () => document.documentElement.classList.contains('touch-device'),
     motion: () => motionEnabled(),
     canPlay: () => !openDialogName && currentScreen === 'game'

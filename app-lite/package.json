@@ -1,7 +1,7 @@
 {
   "name": "ultrasweeper-lite",
   "productName": "UltraSweeper Lite",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "UltraSweeper Lite: the classic-look UltraSweeper, light enough for older devices.",
   "author": "UltraSweeper",
   "main": "electron-main.js",

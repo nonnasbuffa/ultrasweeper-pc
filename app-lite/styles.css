@@ -1895,3 +1895,116 @@ body.legacy-mode .mode-details i { border: 2px solid; border-color: var(--retro-
 body.legacy-mode .mode-details i img, body.legacy-mode .mode-details i svg { filter: grayscale(1) brightness(0); }
 body.legacy-mode .admin-title-icon, body.legacy-mode h2 svg { color: #000 !important; filter: none !important; }
 body.legacy-mode input[type="checkbox"], body.legacy-mode .legacy-toggle b { filter: grayscale(1); }
+
+/* ==========================================================================
+   UltraSweeper Lite: the normal app in an old-school style. Black, white and gray like
+   a 2000s app or website: square corners, plain 1px borders, buttons that invert on hover,
+   and no gradients, shadows, blur or animations.
+   ========================================================================== */
+body.lite-mode {
+  --accent: #ffffff;
+  background: #000;
+  color: #e6e6e6;
+  font-family: Verdana, Tahoma, Geneva, sans-serif;
+}
+body.lite-mode *:not(.tile), body.lite-mode *::before, body.lite-mode *::after {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  animation: none !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  font-family: inherit;
+}
+body.lite-mode .tile { border-radius: 0 !important; animation: none !important; transition: none !important; box-shadow: none !important; }
+body.lite-mode .loading-screen, body.lite-mode .dialog-screen { background: #000000e6 !important; }
+body.lite-mode .loading-screen { background: #000 !important; }
+
+/* Panels and cards: black with a thin gray line. */
+body.lite-mode .mode-screen,
+body.lite-mode .mode-card,
+body.lite-mode .dialog-card,
+body.lite-mode .settings-card,
+body.lite-mode .game-panel,
+body.lite-mode .board-wrap,
+body.lite-mode .maps-row,
+body.lite-mode .option-row,
+body.lite-mode .asset-row,
+body.lite-mode .profile-stats > div,
+body.lite-mode .profile-times > div,
+body.lite-mode .profile-bio-text,
+body.lite-mode .stats-tile,
+body.lite-mode .platinum > *,
+body.lite-mode .admin-panel {
+  border: 1px solid #555 !important;
+  background: #000 !important;
+}
+body.lite-mode .mode-screen::before, body.lite-mode .mode-screen::after, body.lite-mode .menu-hero::before, body.lite-mode .menu-hero::after { display: none !important; }
+body.lite-mode .menu-hero { background: none !important; border-bottom: 1px dashed #555; }
+body.lite-mode .mode-card:hover, body.lite-mode .option-row:hover { border-color: #fff !important; }
+body.lite-mode .mode-card *, body.lite-mode .mode-details b { color: #e6e6e6 !important; }
+body.lite-mode .mode-details i { color: #fff !important; }
+
+/* Headings and links in the style of an old web page. */
+body.lite-mode h1, body.lite-mode h2, body.lite-mode h3 { color: #fff !important; font-family: Verdana, Tahoma, sans-serif; letter-spacing: 0; }
+body.lite-mode h1 { font-weight: bold; }
+body.lite-mode .eyebrow { color: #9a9a9a !important; letter-spacing: .15em; }
+body.lite-mode .brand img { filter: grayscale(1); }
+body.lite-mode .brand { color: #fff; font-weight: bold; }
+
+/* Buttons: white outline on black; invert on hover. Main buttons start inverted. */
+body.lite-mode button:not(.tile):not(.mode-card):not(.option-row):not(.close-button):not(.face-button),
+body.lite-mode .upload-button {
+  border: 1px solid #fff !important;
+  background: #000 !important;
+  color: #fff !important;
+}
+body.lite-mode button:not(.tile):not(.mode-card):not(.option-row):not(.face-button):hover { background: #fff !important; color: #000 !important; }
+body.lite-mode button:not(.tile):not(.mode-card):not(.option-row):not(.face-button):hover svg { color: #000 !important; }
+body.lite-mode .primary-button { background: #fff !important; color: #000 !important; font-weight: bold; }
+body.lite-mode .primary-button:hover { background: #000 !important; color: #fff !important; }
+body.lite-mode .text-button, body.lite-mode .close-button { border-color: transparent !important; background: none !important; color: #e6e6e6 !important; text-decoration: underline; }
+body.lite-mode .text-button:hover, body.lite-mode .close-button:hover { background: #fff !important; color: #000 !important; }
+body.lite-mode .option-row b, body.lite-mode .legacy-toggle b { border: 1px solid #fff; background: #000 !important; color: #fff !important; }
+body.lite-mode .option-row[aria-pressed="true"] b { background: #fff !important; color: #000 !important; }
+body.lite-mode svg { color: inherit; }
+body.lite-mode .admin-toggle-icon, body.lite-mode .button-icon { color: inherit !important; }
+
+/* Fields */
+body.lite-mode input, body.lite-mode textarea, body.lite-mode select {
+  border: 1px solid #777 !important;
+  background: #000 !important;
+  color: #fff !important;
+}
+body.lite-mode input:focus, body.lite-mode textarea:focus { outline: 1px solid #fff !important; }
+body.lite-mode input[type="range"] { accent-color: #fff; border: 0 !important; }
+
+/* Game: the board in plain gray and black. */
+body.lite-mode .face-button { border: 1px solid #fff !important; background: #000 !important; }
+body.lite-mode .counter strong { color: #fff; font-family: "Courier New", Courier, monospace; }
+body.lite-mode .counter-label { color: #9a9a9a !important; }
+body.lite-mode .tile { background: #2b2b2b !important; border: 1px solid #000 !important; }
+body.lite-mode .tile:not(.revealed):hover { background: #3c3c3c !important; }
+body.lite-mode .tile.revealed { background: #0d0d0d !important; border-color: #222 !important; }
+body.lite-mode .tile.exploded { background: #7a0000 !important; }
+
+/* Bits that were colorful: plain white. */
+body.lite-mode .profile-admin, body.lite-mode .profile-banned, body.lite-mode .friends-alert { border: 1px solid #fff !important; background: #000 !important; color: #fff !important; }
+body.lite-mode .gold-name { background: none !important; -webkit-text-fill-color: currentColor; color: #fff !important; }
+body.lite-mode .profile-picture.aura-gold::before { background: #fff !important; }
+body.lite-mode .friend-avatar, body.lite-mode .profile-picture { border: 1px solid #fff !important; background: #000 !important; color: #fff !important; }
+body.lite-mode .stats-tab { border: 1px solid #555 !important; background: #000 !important; color: #bbb !important; }
+body.lite-mode .stats-tab[aria-selected="true"] { border-color: #fff !important; background: #fff !important; color: #000 !important; }
+
+/* 3D Mode HUD */
+body.lite-mode .world3d-hotbar button, body.lite-mode .world3d-jump, body.lite-mode .world3d-view, body.lite-mode .world3d-stick { border: 1px solid #fff !important; background: #000 !important; color: #fff !important; }
+body.lite-mode .world3d-hotbar svg { color: #fff !important; }
+body.lite-mode .world3d-stick i { background: #fff !important; }
+body.lite-mode .world3d-start, body.lite-mode .world3d-tip { border: 1px solid #fff !important; background: #000 !important; color: #fff !important; }
+body.lite-mode .world3d-crosshair::before, body.lite-mode .world3d-crosshair::after { background: #fff !important; }
+body.lite-mode .game-status { background: #000 !important; }
+body.lite-mode .mode-card::after, body.lite-mode .mode-card::before { display: none !important; }
+body.lite-mode .board-art, body.lite-mode .profile-badges, body.lite-mode .badge-medal { filter: grayscale(1); }
+body.lite-mode .card-number { color: #9a9a9a !important; }
+body.lite-mode .menu-hero .intro, body.lite-mode .mode-card small, body.lite-mode .game-hint, body.lite-mode .game-status { color: #bbb !important; }
+body.lite-mode h1, body.lite-mode .mode-card-title { font-family: Verdana, Tahoma, sans-serif !important; letter-spacing: 0 !important; }

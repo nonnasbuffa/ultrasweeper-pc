@@ -19,9 +19,9 @@
       numbers: ['#6fcaff', '#79e8ad', '#ff9d9d', '#b1a2ff', '#ffbd80', '#77e2e8', '#ffffff', '#b7c1d0']
     },
     legacy: {
-      sky: '#d4d4d4', fog: 0, ground: '#9a9a9a', grid: null, rim: '#808080',
+      sky: '#000000', fog: 0, ground: '#111111', grid: '#2a2a2a', rim: '#444444',
       block: ['#c0c0c0', '#ffffff', '#808080'], floor: ['#bdbdbd', '#7b7b7b'],
-      stick: '#111111', ink: '#000000', dust: null, outline: '#000000', cloth: '#ff0000', exploded: '#ff0000',
+      stick: '#ffffff', ink: '#000000', dust: null, outline: '#ffffff', cloth: '#ff0000', exploded: '#ff0000',
       numbers: ['#0000ff', '#008000', '#ff0000', '#000080', '#800000', '#008080', '#000000', '#808080']
     }
   };
@@ -348,7 +348,7 @@
     const stick = w.stick;
     const legacy = w.legacy;
     const ink = legacy ? '#000000' : '#0b0e15';
-    const paper = legacy ? '#000000' : '#eef3fa';
+    const paper = legacy ? '#ffffff' : '#eef3fa';
     const hips = screenPoint(w, stick.hips);
     const neck = screenPoint(w, stick.torso, 0, 0.5, 0);
     const head = screenPoint(w, stick.head);
