@@ -1766,3 +1766,21 @@ body.legacy-mode .world3d-jump, body.legacy-mode .world3d-view { border: 1px sol
 .touch-device .world3d-tip { top: 40%; bottom: auto; }
 body.legacy-mode .world3d-tip { border: 1px solid #000; border-radius: 3px; background: #ffffe1; color: #000; font: 12px Tahoma, Verdana, sans-serif; animation: none; }
 body.legacy-mode .world3d-tip b { color: #000; }
+
+/* 3D Mode on phones: a small HUD tucked into the top corners, leaving the world visible. */
+.touch-device body.play-3d:not(.legacy-mode) .game-screen, .touch-device body.play-3d:not(.legacy-mode) .game-screen .game-header, .touch-device body.play-3d:not(.legacy-mode) .game-screen .game-panel { animation: none; transform: none; }
+.touch-device body.play-3d:not(.legacy-mode) .game-screen { padding-top: 0; translate: none; transition: none; }
+.touch-device body.play-3d:not(.legacy-mode) .game-header { position: fixed; top: calc(6px + var(--safe-top, 0px)); right: calc(6px + var(--safe-right, 0px)); left: auto; gap: 0; translate: none; padding: 2px; border-radius: 12px; background: #0b0e15b8; }
+.touch-device body.play-3d:not(.legacy-mode) .game-header .text-button { padding: 6px 7px; font-size: .72rem; }
+.touch-device body.play-3d:not(.legacy-mode) .game-header .button-icon { width: 15px; height: 15px; }
+.touch-device body.play-3d:not(.legacy-mode) #open-settings { font-size: 0; gap: 0; }
+.touch-device body.play-3d:not(.legacy-mode) .game-panel { position: fixed; top: calc(6px + var(--safe-top, 0px)); left: calc(6px + var(--safe-left, 0px)); gap: 6px; padding: 4px 8px; border-radius: 12px; }
+.touch-device body.play-3d:not(.legacy-mode) .counter { min-width: 34px; }
+.touch-device body.play-3d:not(.legacy-mode) .counter-label { font-size: .5rem; }
+.touch-device body.play-3d:not(.legacy-mode) .counter strong { font-size: .95rem; }
+.touch-device body.play-3d:not(.legacy-mode) .face-button { width: 32px; height: 32px; border-radius: 9px; }
+.touch-device body.play-3d:not(.legacy-mode) .face-button img { width: 22px; height: 22px; }
+.touch-device body.play-3d:not(.legacy-mode) .game-status { position: fixed; top: calc(56px + var(--safe-top, 0px)); left: calc(6px + var(--safe-left, 0px)); margin: 0; max-width: calc(100vw - 20px); padding: 3px 10px; font-size: .72rem; white-space: normal; }
+/* Legacy keeps its little XP window, just smaller and in the top-left corner. */
+.touch-device body.play-3d.legacy-mode .game-screen { position: fixed; top: calc(4px + var(--safe-top, 0px)); left: calc(4px + var(--safe-left, 0px)); margin: 0; scale: .62; transform-origin: top left; }
+.touch-device body.play-3d:not(.legacy-mode) #open-settings .button-icon { display: block; }

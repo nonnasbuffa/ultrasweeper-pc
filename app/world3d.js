@@ -297,6 +297,9 @@
 
     // The skeleton is never drawn itself: drawInk() traces it as a flat drawing. It still casts the shadow.
     sketch.visible = false;
+    // No tools in his hands: digging and flagging are just the arm swings.
+    shovel.visible = false;
+    flag.visible = false;
     root.traverse(part => {
       if (!part.material) return;
       part.material.colorWrite = false;
@@ -370,40 +373,6 @@
     };
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-
-    // Tools.
-    const shovelTop = screenPoint(w, stick.shovel, 0, 0.3, 0);
-    const shovelEnd = screenPoint(w, stick.shovel, 0, -0.7, 0);
-    const blade = [[-0.13, -0.7], [0.13, -0.7], [0.13, -0.89], [0, -1.02], [-0.13, -0.89]].map(([x, y]) => screenPoint(w, stick.shovel, x, y, 0));
-    if (shovelTop && shovelEnd && blade.every(Boolean)) {
-      shapes.push({ depth: shovelEnd.depth, draw: () => {
-        line([shovelTop, shovelEnd], 7, legacy ? '#7a4a1a' : '#c48a4e', 0.75);
-        ctx.beginPath();
-        blade.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-        ctx.closePath();
-        ctx.fillStyle = legacy ? '#9a9a9a' : '#d6dee8';
-        ctx.fill();
-        ctx.strokeStyle = ink;
-        ctx.lineWidth = Math.max(1, width * 0.45);
-        ctx.stroke();
-      } });
-    }
-    const poleTop = screenPoint(w, stick.flag, 0, 0.65, 0);
-    const poleEnd = screenPoint(w, stick.flag, 0, -0.35, 0);
-    const cloth = [[-0.09, 0.62], [-0.09, 0.36], [0.24, 0.49]].map(([x, y]) => screenPoint(w, stick.flag, x * 1.2 + 0.11, y * 1.2 - 0.1, 0));
-    if (poleTop && poleEnd && cloth.every(Boolean)) {
-      shapes.push({ depth: poleEnd.depth, draw: () => {
-        line([poleTop, poleEnd], 3, legacy ? '#000000' : '#f2f5f9', 0.6);
-        ctx.beginPath();
-        cloth.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-        ctx.closePath();
-        ctx.fillStyle = w.look.cloth;
-        ctx.fill();
-        ctx.strokeStyle = ink;
-        ctx.lineWidth = Math.max(1, width * 0.4);
-        ctx.stroke();
-      } });
-    }
 
     stick.legs.forEach((leg, i) => limb(leg, 1 + i));
     stick.arms.forEach((arm, i) => limb(arm, 3 + i));
@@ -1366,13 +1335,22 @@
     };
   }
 
-  function grabMouse() {
+  // Captures the mouse. Right after Esc freed it the browser refuses for about a second,
+  // so keep asking for a moment instead of giving up on the first try.
+  function grabMouse(tries = 8) {
+    const retry = () => {
+      if (tries > 1 && world && !world.touch && document.pointerLockElement !== renderer.domElement) {
+        grabMouse(tries - 1);
+      }
+    };
     try {
       const request = renderer.domElement.requestPointerLock();
       if (request && request.catch) request.catch(() => {});
     } catch {
-      // Not allowed right now; the Esc hint stays up.
+      // Refused; checked again below.
     }
+    // Older versions of the engine don't say when they refuse, so look again shortly.
+    window.setTimeout(retry, 150);
   }
 
   function bindControls(w) {
