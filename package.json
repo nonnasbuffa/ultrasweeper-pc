@@ -1,13 +1,13 @@
 {
   "name": "ultrasweeper-pc-build",
   "private": true,
-  "description": "Packs the desktop game into UltraSweeper and UltraSweeper Lite for Windows (portable exe and installer) and Linux (AppImage and .deb).",
+  "description": "Packs the desktop game into UltraSweeper and UltraSweeper Lite: a Windows installer exe and a Linux .deb for each.",
   "scripts": {
     "sync": "node scripts/sync-app.js",
-    "build": "electron-builder --win portable nsis --x64 --publish never",
-    "build:linux": "electron-builder --linux AppImage deb --x64 --publish never",
-    "build:lite": "electron-builder --config lite.config.json --win portable nsis --x64 --publish never",
-    "build:lite:linux": "electron-builder --config lite.config.json --linux AppImage deb --x64 --publish never"
+    "build": "electron-builder --win nsis --x64 --publish never",
+    "build:linux": "electron-builder --linux deb --x64 --publish never",
+    "build:lite": "electron-builder --config lite.config.json --win nsis --x64 --publish never",
+    "build:lite:linux": "electron-builder --config lite.config.json --linux deb --x64 --publish never"
   },
   "devDependencies": {
     "electron-builder": "24.13.3"
@@ -25,19 +25,12 @@
     "asar": true,
     "npmRebuild": false,
     "win": {
-      "target": [
-        "portable",
-        "nsis"
-      ],
+      "target": "nsis",
       "icon": "build/icon.png",
       "signAndEditExecutable": true
     },
-    "portable": {
-      "artifactName": "UltraSweeper.exe"
-    },
     "linux": {
       "target": [
-        "AppImage",
         "deb"
       ],
       "icon": "build/icon.png",
@@ -45,9 +38,6 @@
       "maintainer": "UltraSweeper",
       "synopsis": "A customizable offline minesweeper game",
       "executableName": "ultrasweeper"
-    },
-    "appImage": {
-      "artifactName": "UltraSweeper.AppImage"
     },
     "deb": {
       "artifactName": "UltraSweeper.deb"
@@ -61,7 +51,7 @@
       "shortcutName": "UltraSweeper",
       "uninstallDisplayName": "UltraSweeper",
       "include": "build/installer.nsh",
-      "artifactName": "UltraSweeper-Setup.exe",
+      "artifactName": "UltraSweeper.exe",
       "runAfterFinish": true
     }
   }

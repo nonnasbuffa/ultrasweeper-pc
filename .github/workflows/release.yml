@@ -1,7 +1,7 @@
 name: Build UltraSweeper for PC
 
-# Pushing a version tag (for example v1.0.4) builds UltraSweeper and UltraSweeper Lite for Windows (exe)
-# and Linux (AppImage and .deb) and publishes them together as a Release.
+# Pushing a version tag (for example v4.1.1) builds UltraSweeper and UltraSweeper Lite for Windows (an installer exe)
+# and Linux (.deb) and publishes them together as a Release.
 # It can also be run by hand from the Actions tab; then the files are only kept as downloadable artifacts.
 on:
   push:
@@ -31,10 +31,10 @@ jobs:
         shell: bash
         run: node scripts/set-version.js
 
-      - name: Build UltraSweeper.exe and UltraSweeper-Setup.exe
+      - name: Build UltraSweeper.exe
         run: npm run build
 
-      - name: Build UltraSweeper-Lite.exe and UltraSweeper-Lite-Setup.exe
+      - name: Build UltraSweeper-Lite.exe
         run: npm run build:lite
 
       - uses: actions/upload-artifact@v4
@@ -42,9 +42,7 @@ jobs:
           name: UltraSweeper-windows
           path: |
             dist/UltraSweeper.exe
-            dist/UltraSweeper-Setup.exe
             dist/UltraSweeper-Lite.exe
-            dist/UltraSweeper-Lite-Setup.exe
 
   linux:
     # Ubuntu 22.04 matches Linux Mint 21, so the build also runs on older Mint versions.
@@ -64,10 +62,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: node scripts/set-version.js
 
-      - name: Build UltraSweeper.AppImage and UltraSweeper.deb
+      - name: Build UltraSweeper.deb
         run: npm run build:linux
 
-      - name: Build UltraSweeper-Lite.AppImage and UltraSweeper-Lite.deb
+      - name: Build UltraSweeper-Lite.deb
         run: npm run build:lite:linux
 
       - name: Check the .deb files install and both games start
@@ -84,25 +82,11 @@ jobs:
             echo "$game ran for 20 seconds without crashing."
           done
 
-      - name: Check the AppImage starts
-        continue-on-error: true
-        run: |
-          sudo apt-get install -y -qq libfuse2
-          chmod +x dist/UltraSweeper.AppImage
-          set +e
-          xvfb-run -a timeout 20 ./dist/UltraSweeper.AppImage
-          code=$?
-          set -e
-          if [ "$code" != "124" ]; then echo "The AppImage exited early with code $code"; exit 1; fi
-          echo "The AppImage ran for 20 seconds without crashing."
-
       - uses: actions/upload-artifact@v4
         with:
           name: UltraSweeper-linux
           path: |
-            dist/UltraSweeper.AppImage
             dist/UltraSweeper.deb
-            dist/UltraSweeper-Lite.AppImage
             dist/UltraSweeper-Lite.deb
 
   release:
@@ -120,15 +104,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            files/UltraSweeper-Setup.exe files/UltraSweeper-Lite-Setup.exe \
-            files/UltraSweeper.exe files/UltraSweeper.AppImage files/UltraSweeper.deb \
-            files/UltraSweeper-Lite.exe files/UltraSweeper-Lite.AppImage files/UltraSweeper-Lite.deb \
+            files/UltraSweeper.exe files/UltraSweeper.deb \
+            files/UltraSweeper-Lite.exe files/UltraSweeper-Lite.deb \
             --repo "$GITHUB_REPOSITORY" \
             --title "UltraSweeper ${GITHUB_REF_NAME#v}" \
-            --notes "**Windows:** download **UltraSweeper-Setup.exe** to install it: it asks where to install and whether you want a desktop and Start menu shortcut. Or download **UltraSweeper.exe** to just run it, no install needed.
+            --notes "**Windows:** download **UltraSweeper.exe** and open it. It installs the game and asks where to put it and whether you want a desktop and Start menu shortcut.
           If Windows shows \"Windows protected your PC\", click **More info** → **Run anyway** (the exe isn't code-signed).
 
           **Linux Mint / Ubuntu:** download **UltraSweeper.deb**, double-click it and click **Install Package**. UltraSweeper then appears in your app menu under Games.
-          Or download **UltraSweeper.AppImage**, right-click it → Properties → Permissions → tick **Allow executing file as program**, then double-click it.
 
-          **UltraSweeper Lite** is the classic-look version, made for older or slower PCs. Same steps, with the **UltraSweeper-Lite** files."
+          **UltraSweeper Lite** is the lighter version for older or slower PCs. Same steps, with **UltraSweeper-Lite.exe** or **UltraSweeper-Lite.deb**."

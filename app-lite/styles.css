@@ -1916,3 +1916,9 @@ body.lite-mode .mode-card:hover, body.lite-mode .mode-card:active { transform: n
 body.lite-mode .text-button, body.lite-mode .icon-toggle, body.lite-mode .legacy-toggle:not(.option-row) { border: 1px solid #3f4d63 !important; }
 body.lite-mode .text-button:hover, body.lite-mode .icon-toggle:hover { border-color: #8e9caf !important; }
 body.lite-mode button:active:not(.tile) { transform: none !important; filter: brightness(.85); }
+/* Lite's wider font: let the card text flow instead of sitting on fixed spots, so lines never overlap. */
+body.lite-mode .mode-card { display: flex; flex-direction: column; min-height: 0; }
+body.lite-mode .mode-card-title { margin-top: 18px; }
+body.lite-mode .mode-details { position: static; display: flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 14px; }
+body.lite-mode .mode-details i { margin-left: auto; }
+body.lite-mode .admin-toggle { background: none !important; }
