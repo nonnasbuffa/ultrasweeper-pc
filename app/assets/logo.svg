@@ -1,11 +1,63 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><defs><clipPath id="c"><rect width="1024" height="1024" rx="230"/></clipPath></defs><g clip-path="url(#c)">
   <defs>
-    <radialGradient id="bg" cx=".5" cy=".5" r=".6"><stop offset="0" stop-color="#16324a"/><stop offset="1" stop-color="#0b1220"/></radialGradient>
-    <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5cf0d0" stop-opacity="0"/><stop offset="1" stop-color="#5cf0d0" stop-opacity=".75"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#173a52"/>
+      <stop offset=".5" stop-color="#101827"/>
+      <stop offset="1" stop-color="#0a0d14"/>
+    </linearGradient>
+    <radialGradient id="spot" cx="78%" cy="16%" r="55%">
+      <stop offset="0" stop-color="#5cf0d0" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#5cf0d0" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#bg)" stroke="#5cf0d0" stroke-opacity=".4" stroke-width="2"/>
-  <g fill="none" stroke="#5cf0d0" stroke-opacity=".45" stroke-width="1.8"><circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="14"/><circle cx="32" cy="32" r="6"/></g>
-  <path d="M32 32L32 10A22 22 0 0 1 52.8 24.8z" fill="url(#sweep)"/>
-  <g transform="translate(43 22)"><path d="M0-7V7M-7 0H7M-5-5L5 5M5-5L-5 5" stroke="#ffd166" stroke-width="2.2" stroke-linecap="round"/><circle r="4.6" fill="#ffd166"/></g>
-  <circle cx="32" cy="32" r="2.6" fill="#5cf0d0"/>
-</svg>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#spot)"/>
+  <g fill="#ffffff" fill-opacity=".05">
+    <circle cx="256" cy="256" r="6"/><circle cx="512" cy="256" r="6"/><circle cx="768" cy="256" r="6"/>
+    <circle cx="256" cy="512" r="6"/><circle cx="768" cy="512" r="6"/>
+    <circle cx="256" cy="768" r="6"/><circle cx="512" cy="768" r="6"/><circle cx="768" cy="768" r="6"/>
+  </g>
+
+  <defs>
+    <radialGradient id="shell" cx="36%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#9fb2d6"/>
+      <stop offset=".35" stop-color="#36425c"/>
+      <stop offset="1" stop-color="#0d121c"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5cf0d0" stop-opacity="0"/>
+      <stop offset=".7" stop-color="#5cf0d0" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#5cf0d0" stop-opacity=".95"/>
+    </linearGradient>
+    <linearGradient id="spike" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7c8db0"/>
+      <stop offset="1" stop-color="#4a5878"/>
+    </linearGradient>
+    <linearGradient id="cloth" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff8a7a"/>
+      <stop offset="1" stop-color="#ff4d6d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset=".55" stop-color="#5cf0d0" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#5cf0d0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g transform="translate(500 548)">
+    <circle r="330" fill="url(#glow)"/>
+    <g stroke="url(#spike)" stroke-width="40" stroke-linecap="round">
+      <path d="M0 -258V258M-258 0H258M-182 -182L182 182M182 -182L-182 182"/>
+    </g>
+    <g fill="#5cf0d0">
+      <circle cx="0" cy="-258" r="24"/><circle cx="0" cy="258" r="24"/>
+      <circle cx="-258" cy="0" r="24"/><circle cx="258" cy="0" r="24"/>
+    </g>
+    <circle r="178" fill="url(#shell)"/>
+    <circle r="178" fill="none" stroke="url(#rim)" stroke-width="14"/>
+    <path d="M-120 -40 A130 130 0 0 1 -40 -125" fill="none" stroke="#ffffff" stroke-opacity=".75" stroke-width="26" stroke-linecap="round"/>
+    <circle cx="70" cy="70" r="20" fill="#5cf0d0"/>
+  </g>
+  <g transform="translate(640 150)">
+    <rect x="0" y="0" width="16" height="190" rx="8" fill="#eef3fa"/>
+    <path d="M14 6 H150 L118 52 L150 98 H14 Z" fill="url(#cloth)"/>
+  </g>
+</g></svg>

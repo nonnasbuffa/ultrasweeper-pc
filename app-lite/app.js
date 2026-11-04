@@ -200,6 +200,8 @@ if (liteEdition) {
   document.body.classList.add('lite-mode');
   const brand = document.querySelector('.brand');
   brand.lastChild.textContent = 'UltraSweeper Lite';
+  // Lite keeps the original mine logo; UltraSweeper has the newer one.
+  brand.querySelector('img').src = 'assets/logo-lite.svg';
 }
 applyLegacyMode();
 applyThreeDMode();
