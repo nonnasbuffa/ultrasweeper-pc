@@ -2706,17 +2706,15 @@ async function submitLinkEmail(event) {
     message.textContent = "That doesn't look like an email address.";
     return;
   }
-  if (!password) {
-    message.textContent = 'Type your password to confirm it is you.';
-    return;
-  }
   button.disabled = true;
   message.textContent = 'Sending…';
   try {
     await window.UltraCloud.linkEmail(account, password, email);
     saveAccount();
     document.querySelector('#link-password').value = '';
-    message.textContent = `Almost done! Open the email we sent to ${email} and click the link to finish linking it.`;
+    message.textContent = password
+      ? `Almost done! Open the email we sent to ${email} and click the link to finish linking it.`
+      : `Almost done! Click the link in the email we sent to ${email}. Then use "Forgot your password?" with that email to choose a new password, and log in with your email once.`;
   } catch (problem) {
     message.textContent = problem.message === 'Wrong username or password.' ? "That password isn't right." : problem.message;
   } finally {
