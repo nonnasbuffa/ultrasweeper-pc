@@ -19,10 +19,10 @@
       numbers: ['#6fcaff', '#79e8ad', '#ff9d9d', '#b1a2ff', '#ffbd80', '#77e2e8', '#ffffff', '#b7c1d0']
     },
     legacy: {
-      sky: '#000000', fog: 0, ground: '#111111', grid: '#2a2a2a', rim: '#444444',
-      block: ['#c0c0c0', '#ffffff', '#808080'], floor: ['#bdbdbd', '#7b7b7b'],
-      stick: '#ffffff', ink: '#000000', dust: null, outline: '#ffffff', cloth: '#ff0000', exploded: '#ff0000',
-      numbers: ['#0000ff', '#008000', '#ff0000', '#000080', '#800000', '#008080', '#000000', '#808080']
+      sky: '#0b0e15', fog: 0, ground: '#0f151e', grid: '#1b2533', rim: '#1d2633',
+      block: ['#2e3a4d', '#43536b', '#1d2532'], floor: ['#151c26', '#1f2836'],
+      stick: '#ffffff', ink: '#0b0e15', dust: null, outline: '#5cf0d0', cloth: '#ff5d6c', exploded: '#ff5050',
+      numbers: ['#6fcaff', '#79e8ad', '#ff9d9d', '#b1a2ff', '#ffbd80', '#77e2e8', '#ffffff', '#b7c1d0']
     }
   };
   const coveredStates = new Set(['covered', 'xray', 'flag', 'wrong', 'planted']);
@@ -620,7 +620,7 @@
     scene.background = new THREE.Color(look.sky);
     if (look.fog) scene.fog = new THREE.Fog(look.sky, look.fog, look.fog + Math.max(width, height) * 1.6 + 20);
 
-    scene.add(new THREE.HemisphereLight(legacy ? '#ffffff' : '#b9d8ff', legacy ? '#9a9a9a' : '#101820', legacy ? 1.6 : 1.3));
+    scene.add(new THREE.HemisphereLight(legacy ? '#ffffff' : '#b9d8ff', legacy ? '#101820' : '#101820', legacy ? 1.6 : 1.3));
     const sun = new THREE.DirectionalLight(legacy ? '#ffffff' : '#fff1dc', legacy ? 1.6 : 2.2);
     sun.position.set(width * 0.35 + 6, 16, height * 0.25 + 9);
     if (shadows) {
