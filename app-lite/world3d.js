@@ -19,7 +19,7 @@
       numbers: ['#6fcaff', '#79e8ad', '#ff9d9d', '#b1a2ff', '#ffbd80', '#77e2e8', '#ffffff', '#b7c1d0']
     },
     legacy: {
-      sky: '#7aa7e8', fog: 0, ground: '#5d9b3b', grid: null, rim: '#808080',
+      sky: '#d4d4d4', fog: 0, ground: '#9a9a9a', grid: null, rim: '#808080',
       block: ['#c0c0c0', '#ffffff', '#808080'], floor: ['#bdbdbd', '#7b7b7b'],
       stick: '#111111', ink: '#000000', dust: null, outline: '#000000', cloth: '#ff0000', exploded: '#ff0000',
       numbers: ['#0000ff', '#008000', '#ff0000', '#000080', '#800000', '#008080', '#000000', '#808080']
@@ -620,7 +620,7 @@
     scene.background = new THREE.Color(look.sky);
     if (look.fog) scene.fog = new THREE.Fog(look.sky, look.fog, look.fog + Math.max(width, height) * 1.6 + 20);
 
-    scene.add(new THREE.HemisphereLight(legacy ? '#ffffff' : '#b9d8ff', legacy ? '#5d9b3b' : '#101820', legacy ? 1.6 : 1.3));
+    scene.add(new THREE.HemisphereLight(legacy ? '#ffffff' : '#b9d8ff', legacy ? '#9a9a9a' : '#101820', legacy ? 1.6 : 1.3));
     const sun = new THREE.DirectionalLight(legacy ? '#ffffff' : '#fff1dc', legacy ? 1.6 : 2.2);
     sun.position.set(width * 0.35 + 6, 16, height * 0.25 + 9);
     if (shadows) {
