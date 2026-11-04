@@ -17,6 +17,10 @@
   const emailDomain = 'players.ultrasweeper.game';
   const messages = {
     EMAIL_EXISTS: 'That username is taken. Pick another one, or log in.',
+    INVALID_EMAIL: "That doesn't look like an email address.",
+    INVALID_NEW_EMAIL: "That doesn't look like an email address.",
+    CREDENTIAL_TOO_OLD_LOGIN_AGAIN: 'For your safety, log out and back in, then try again.',
+    RESET_PASSWORD_EXCEED_LIMIT: 'Too many reset emails. Wait a while and try again.',
     EMAIL_NOT_FOUND: 'Wrong username or password.',
     INVALID_PASSWORD: 'Wrong username or password.',
     INVALID_LOGIN_CREDENTIALS: 'Wrong username or password.',
@@ -57,10 +61,14 @@
     return request(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   }
 
-  async function signIn(action, username, password) {
+  function playerEmail(username) {
+    return `${username.toLowerCase()}@${emailDomain}`;
+  }
+
+  async function signIn(action, username, password, email = playerEmail(username)) {
     if (!ready()) throw new CloudError("Accounts aren't switched on in this version yet. Play as a guest for now.", 'setup');
     const body = await post(`${endpoints.auth}/accounts:${action}?key=${config.apiKey}`, {
-      email: `${username.toLowerCase()}@${emailDomain}`,
+      email,
       password,
       returnSecureToken: true
     });
@@ -128,10 +136,80 @@
     await request(documentUrl(path), { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
   }
 
+  // ---- Linked emails ----
+  // Once an email is linked it becomes the account's login email, so the username alone no longer finds the account.
+  // To keep username logins working, logins/{username} keeps that email locked with the account's password:
+  // anyone can read the record, but only someone who knows the password can unlock it.
+  const toBase64 = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes)));
+  const fromBase64 = text => Uint8Array.from(atob(text), c => c.charCodeAt(0));
+
+  async function lockKey(username, password) {
+    const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: new TextEncoder().encode(`ultrasweeper-login:${username.toLowerCase()}`), iterations: 150000, hash: 'SHA-256' },
+      material, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+    );
+  }
+
+  async function lockEmail(username, password, email) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await lockKey(username, password), new TextEncoder().encode(email));
+    return { iv: toBase64(iv), data: toBase64(data) };
+  }
+
+  async function unlockEmail(username, password, record) {
+    try {
+      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromBase64(record.iv) }, await lockKey(username, password), fromBase64(record.data));
+      return new TextDecoder().decode(plain);
+    } catch {
+      return null;
+    }
+  }
+
+  async function saveLoginRecord(session, password, email) {
+    await putDocument(session, `logins/${session.username.toLowerCase()}`, { uid: session.uid, ...(await lockEmail(session.username, password, email)) });
+  }
+
+  // Username (or email) and password. A username whose account has a linked email is found through its login record.
+  async function logIn(name, password) {
+    if (name.includes('@')) return signIn('signInWithPassword', '', password, name.trim());
+    try {
+      return await signIn('signInWithPassword', name, password);
+    } catch (error) {
+      if (error.kind !== 'server') throw error;
+      const record = await getDocument(null, `logins/${encodeURIComponent(name.toLowerCase())}`).catch(() => null);
+      const email = record && await unlockEmail(name, password, record);
+      if (!email) throw error;
+      return signIn('signInWithPassword', '', password, email);
+    }
+  }
+
+  async function accountInfo(session) {
+    const body = await post(`${endpoints.auth}/accounts:lookup?key=${config.apiKey}`, { idToken: await idToken(session) });
+    const user = body && body.users && body.users[0];
+    const email = user ? user.email || '' : '';
+    return { email: email.endsWith(`@${emailDomain}`) ? '' : email, verified: Boolean(user && user.emailVerified) };
+  }
+
   window.UltraCloud = {
     ready,
     signUp: (username, password) => signIn('signUp', username, password),
-    logIn: (username, password) => signIn('signInWithPassword', username, password),
+    logIn,
+    accountInfo,
+    // Links an email: checks the password, keeps the locked login record, then Firebase emails a link.
+    // The email only becomes the login email once that link is clicked.
+    async linkEmail(session, password, email) {
+      const current = await accountInfo(session);
+      await signIn('signInWithPassword', session.username, password, current.email || playerEmail(session.username));
+      await saveLoginRecord(session, password, email);
+      await post(`${endpoints.auth}/accounts:sendOobCode?key=${config.apiKey}`, { requestType: 'VERIFY_AND_CHANGE_EMAIL', idToken: await idToken(session), newEmail: email });
+    },
+    // Keeps the login record readable after the password changes (called after each successful login).
+    refreshLoginRecord: async (session, password) => {
+      const { email } = await accountInfo(session);
+      if (email) await saveLoginRecord(session, password, email);
+    },
+    sendPasswordReset: email => post(`${endpoints.auth}/accounts:sendOobCode?key=${config.apiKey}`, { requestType: 'PASSWORD_RESET', email: email.trim() }),
 
     // The player's save: { username, data (JSON text), updatedAt }, or null if there is none yet.
     load: session => getDocument(session, `users/${session.uid}`),

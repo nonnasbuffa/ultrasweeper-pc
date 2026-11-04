@@ -278,6 +278,7 @@
               <span id="profile-banned" class="profile-banned hidden"><svg><use href="#icon-ban" /></svg>Banned</span>
             </div>
             <p id="profile-status" class="profile-status">Progress only saved on this device</p>
+            <p id="profile-email" class="profile-status hidden"></p>
           </div>
         </div>
         <p id="profile-picture-error" class="form-error profile-picture-error" role="alert"></p>
@@ -301,6 +302,7 @@
         <div class="profile-actions">
           <button id="profile-back" class="secondary-button hidden" type="button">Back to friends</button>
           <button id="profile-add-admin" class="text-button hidden" type="button">Add admin to profile</button>
+          <button id="profile-link-email" class="text-button hidden" type="button">Link email</button>
           <button id="profile-moderate" class="text-button hidden" type="button">Ban players</button>
           <button id="profile-ban" class="secondary-button danger-button hidden" type="button">Ban player</button>
           <button id="profile-remove-picture" class="text-button hidden" type="button">Remove picture</button>
@@ -430,7 +432,7 @@
           <p id="account-form-eyebrow" class="eyebrow">New Account</p>
           <h2 id="account-form-title">Create Account</h2>
           <div class="form-grid">
-            <label class="wide">Username<input id="account-username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="20" required /></label>
+            <label class="wide"><span id="account-username-label">Username</span><input id="account-username" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="80" required /></label>
             <label class="wide">Password<input id="account-password" type="password" autocomplete="new-password" required /></label>
           </div>
           <p id="account-error" class="form-error" role="alert"></p>
@@ -439,6 +441,35 @@
             <button id="account-submit" class="primary-button" type="submit">Sign Up</button>
           </div>
           <p class="account-switch"><span id="account-switch-text">Already have an account?</span> <button id="account-switch" class="text-button" type="button">Log In</button></p>
+          <p id="account-forgot-row" class="account-switch hidden"><button id="account-forgot" class="text-button" type="button">Forgot your password?</button></p>
+        </form>
+        <form id="account-reset" class="hidden" novalidate>
+          <p class="eyebrow">Forgot Password</p>
+          <h2>Reset by Email</h2>
+          <p class="settings-intro">Type the email you linked to your account. We'll send it a link to choose a new password.</p>
+          <div class="form-grid">
+            <label class="wide">Email<input id="reset-email" type="email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="120" required /></label>
+          </div>
+          <p id="reset-message" class="form-error" role="alert"></p>
+          <div class="tutorial-actions">
+            <button id="reset-back" class="secondary-button" type="button">Back</button>
+            <button id="reset-submit" class="primary-button" type="submit">Send Link</button>
+          </div>
+        </form>
+        <form id="account-email" class="hidden" novalidate>
+          <p class="eyebrow">Your Account</p>
+          <h2>Link an Email</h2>
+          <p class="settings-intro">With an email linked you can reset your password if you forget it, and log in with either your username or your email. Only you can see it.</p>
+          <p id="email-current" class="settings-intro"></p>
+          <div class="form-grid">
+            <label class="wide">Email<input id="link-email" type="email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="120" required /></label>
+            <label class="wide">Your password<input id="link-password" type="password" autocomplete="current-password" required /></label>
+          </div>
+          <p id="link-message" class="form-error" role="alert"></p>
+          <div class="tutorial-actions">
+            <button class="secondary-button" type="button" data-close>Cancel</button>
+            <button id="link-submit" class="primary-button" type="submit">Send Link</button>
+          </div>
         </form>
       </div>
     </section>

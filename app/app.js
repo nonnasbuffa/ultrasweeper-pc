@@ -385,6 +385,15 @@ document.querySelector('#account-guest').addEventListener('click', closeDialog);
 document.querySelector('#account-back').addEventListener('click', () => showAccountView('choice'));
 document.querySelector('#account-switch').addEventListener('click', () => showAccountView(accountView === 'signup' ? 'login' : 'signup'));
 document.querySelector('#account-form').addEventListener('submit', submitAccount);
+document.querySelector('#account-forgot').addEventListener('click', () => {
+  const typed = document.querySelector('#account-username').value.trim();
+  showAccountView('reset');
+  if (typed.includes('@')) document.querySelector('#reset-email').value = typed;
+});
+document.querySelector('#reset-back').addEventListener('click', () => showAccountView('login'));
+document.querySelector('#account-reset').addEventListener('submit', submitPasswordReset);
+document.querySelector('#account-email').addEventListener('submit', submitLinkEmail);
+document.querySelector('#profile-link-email').addEventListener('click', () => openAccount('email'));
 // Changes made offline go up as soon as the connection is back, and right away when the app is put away.
 window.addEventListener('online', () => {
   if (signedIn() && loadSyncInfo().dirty) pushProgress();
@@ -2015,6 +2024,7 @@ function renderProfile() {
   document.querySelector('#profile-remove-picture').classList.toggle('hidden', viewing || !profile.picture);
   document.querySelector('#profile-add-admin').classList.toggle('hidden', viewing || !signedIn() || Boolean(account.admin) || !adminState.unlocked);
   document.querySelector('#profile-back').classList.toggle('hidden', !viewing);
+  showProfileEmail();
   // Banning is for admins only (the server checks this too).
   const isAdmin = signedIn() && Boolean(account.admin);
   document.querySelector('#profile-moderate').classList.toggle('hidden', viewing || !isAdmin);
@@ -2557,10 +2567,22 @@ function openAccount(view, firstLaunch = false) {
 function showAccountView(view) {
   accountView = view;
   const choice = view === 'choice';
+  const form = view === 'signup' || view === 'login';
   document.querySelector('#account-choice').classList.toggle('hidden', !choice);
-  document.querySelector('#account-form').classList.toggle('hidden', choice);
+  document.querySelector('#account-form').classList.toggle('hidden', !form);
+  document.querySelector('#account-reset').classList.toggle('hidden', view !== 'reset');
+  document.querySelector('#account-email').classList.toggle('hidden', view !== 'email');
   if (choice) {
     window.setTimeout(() => document.querySelector('#account-signup').focus(), 60);
+    return;
+  }
+  if (view === 'reset') {
+    document.querySelector('#reset-message').textContent = '';
+    window.setTimeout(() => document.querySelector('#reset-email').focus(), 60);
+    return;
+  }
+  if (view === 'email') {
+    showLinkEmailView();
     return;
   }
   const signup = view === 'signup';
@@ -2570,6 +2592,8 @@ function showAccountView(view) {
   document.querySelector('#account-switch-text').textContent = signup ? 'Already have an account?' : 'New here?';
   document.querySelector('#account-switch').textContent = signup ? 'Log In' : 'Sign Up';
   document.querySelector('#account-password').autocomplete = signup ? 'new-password' : 'current-password';
+  document.querySelector('#account-username-label').textContent = signup ? 'Username' : 'Username or email';
+  document.querySelector('#account-forgot-row').classList.toggle('hidden', signup);
   document.querySelector('#account-password').value = '';
   document.querySelector('#account-error').textContent = '';
   window.setTimeout(() => document.querySelector('#account-username').focus(), 60);
@@ -2582,7 +2606,9 @@ async function submitAccount(event) {
   const error = document.querySelector('#account-error');
   const button = document.querySelector('#account-submit');
   if (button.disabled) return;
-  if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
+  const signup = accountView === 'signup';
+  const byEmail = !signup && username.includes('@');
+  if (!byEmail && !/^[A-Za-z0-9_]{3,20}$/.test(username)) {
     error.textContent = 'Usernames are 3 to 20 letters, numbers or _ (no spaces).';
     return;
   }
@@ -2590,18 +2616,34 @@ async function submitAccount(event) {
     error.textContent = 'Your password needs at least 6 characters.';
     return;
   }
-  const signup = accountView === 'signup';
   error.textContent = '';
   button.disabled = true;
   button.textContent = signup ? 'Creating…' : 'Logging in…';
   try {
+    // A username freed by an account that now logs in with its email is still that player's.
+    if (signup && await window.UltraCloud.getProfile(username).catch(() => null)) {
+      error.textContent = 'That username is taken. Pick another one, or log in.';
+      return;
+    }
     const session = await (signup ? window.UltraCloud.signUp(username, password) : window.UltraCloud.logIn(username, password));
     const ban = await window.UltraCloud.getBan(session.uid);
     if (ban) {
       error.textContent = banMessage(ban);
       return;
     }
-    account = { ...session, username };
+    let name = username;
+    if (byEmail) {
+      // Logged in with an email: the username comes from the account's save.
+      const save = await window.UltraCloud.load(session);
+      if (!save || !save.username) {
+        error.textContent = "This account hasn't saved anything yet. Log in with your username instead.";
+        return;
+      }
+      name = save.username;
+    }
+    account = { ...session, username: name };
+    // The locked copy of the email follows password changes (such as a reset by email).
+    if (!signup) window.UltraCloud.refreshLoginRecord(account, password).catch(() => {});
     saveAccount();
     // A new account starts with whatever was played on this device; logging in brings the account's progress here.
     if (signup) await pushProgress();
@@ -2609,11 +2651,92 @@ async function submitAccount(event) {
     watchFriendRequests();
     if (openDialogName === 'account') closeDialog();
   } catch (problem) {
-    error.textContent = problem.message;
+    error.textContent = problem.message === 'Wrong username or password.' && !signup
+      ? 'Wrong username or password. If you reset your password by email, log in with your email this time.'
+      : problem.message;
   } finally {
     button.disabled = false;
     button.textContent = signup ? 'Sign Up' : 'Log In';
   }
+}
+
+async function submitPasswordReset(event) {
+  event.preventDefault();
+  const email = document.querySelector('#reset-email').value.trim();
+  const message = document.querySelector('#reset-message');
+  const button = document.querySelector('#reset-submit');
+  if (button.disabled) return;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    message.textContent = "That doesn't look like an email address.";
+    return;
+  }
+  button.disabled = true;
+  message.textContent = 'Sending…';
+  try {
+    await window.UltraCloud.sendPasswordReset(email);
+    // The server doesn't say whether the email belongs to an account, so neither do we.
+    message.textContent = `If ${email} is linked to an account, a reset link is on its way. Check your inbox (and spam).`;
+  } catch (problem) {
+    message.textContent = problem.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function showLinkEmailView() {
+  const current = document.querySelector('#email-current');
+  document.querySelector('#link-message').textContent = '';
+  document.querySelector('#link-password').value = '';
+  current.textContent = '';
+  window.setTimeout(() => document.querySelector('#link-email').focus(), 60);
+  if (!signedIn()) return;
+  const info = await window.UltraCloud.accountInfo(account).catch(() => null);
+  if (info && info.email && accountView === 'email') current.textContent = `Linked now: ${info.email}. A new email replaces it.`;
+}
+
+async function submitLinkEmail(event) {
+  event.preventDefault();
+  if (!signedIn()) return;
+  const email = document.querySelector('#link-email').value.trim();
+  const password = document.querySelector('#link-password').value;
+  const message = document.querySelector('#link-message');
+  const button = document.querySelector('#link-submit');
+  if (button.disabled) return;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    message.textContent = "That doesn't look like an email address.";
+    return;
+  }
+  if (!password) {
+    message.textContent = 'Type your password to confirm it is you.';
+    return;
+  }
+  button.disabled = true;
+  message.textContent = 'Sending…';
+  try {
+    await window.UltraCloud.linkEmail(account, password, email);
+    saveAccount();
+    document.querySelector('#link-password').value = '';
+    message.textContent = `Almost done! Open the email we sent to ${email} and click the link to finish linking it.`;
+  } catch (problem) {
+    message.textContent = problem.message === 'Wrong username or password.' ? "That password isn't right." : problem.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function showProfileEmail() {
+  const line = document.querySelector('#profile-email');
+  const button = document.querySelector('#profile-link-email');
+  const mine = signedIn() && !profileView;
+  button.classList.toggle('hidden', !mine);
+  line.classList.toggle('hidden', !mine);
+  if (!mine) return;
+  button.textContent = 'Link email';
+  line.textContent = 'No email linked';
+  const info = await window.UltraCloud.accountInfo(account).catch(() => null);
+  if (!info || profileView || !signedIn()) return;
+  line.textContent = info.email ? `Email: ${info.email}` : 'No email linked';
+  button.textContent = info.email ? 'Change email' : 'Link email';
 }
 
 function applyLegacyMode() {
