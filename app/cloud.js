@@ -198,13 +198,9 @@
     accountInfo,
     // Links an email: checks the password, keeps the locked login record, then Firebase emails a link.
     // The email only becomes the login email once that link is clicked.
-    // Without the password (forgotten), the login record is written at the next login by email instead.
-    async linkEmail(session, password, email) {
-      if (password) {
-        const current = await accountInfo(session);
-        await signIn('signInWithPassword', session.username, password, current.email || playerEmail(session.username));
-        await saveLoginRecord(session, password, email);
-      }
+    // Linking needs no password: the email only becomes the account's once the link sent to it is clicked.
+    // The locked login record (for username logins) is written at the next login by email.
+    async linkEmail(session, email) {
       await post(`${endpoints.auth}/accounts:sendOobCode?key=${config.apiKey}`, { requestType: 'VERIFY_AND_CHANGE_EMAIL', idToken: await idToken(session), newEmail: email });
     },
     // Keeps the login record readable after the password changes (called after each successful login).

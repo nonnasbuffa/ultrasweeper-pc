@@ -2686,7 +2686,6 @@ async function submitPasswordReset(event) {
 async function showLinkEmailView() {
   const current = document.querySelector('#email-current');
   document.querySelector('#link-message').textContent = '';
-  document.querySelector('#link-password').value = '';
   current.textContent = '';
   window.setTimeout(() => document.querySelector('#link-email').focus(), 60);
   if (!signedIn()) return;
@@ -2698,7 +2697,6 @@ async function submitLinkEmail(event) {
   event.preventDefault();
   if (!signedIn()) return;
   const email = document.querySelector('#link-email').value.trim();
-  const password = document.querySelector('#link-password').value;
   const message = document.querySelector('#link-message');
   const button = document.querySelector('#link-submit');
   if (button.disabled) return;
@@ -2709,14 +2707,11 @@ async function submitLinkEmail(event) {
   button.disabled = true;
   message.textContent = 'Sending…';
   try {
-    await window.UltraCloud.linkEmail(account, password, email);
+    await window.UltraCloud.linkEmail(account, email);
     saveAccount();
-    document.querySelector('#link-password').value = '';
-    message.textContent = password
-      ? `Almost done! Open the email we sent to ${email} and click the link to finish linking it.`
-      : `Almost done! Click the link in the email we sent to ${email}. Then use "Forgot your password?" with that email to choose a new password, and log in with your email once.`;
+    message.textContent = `Check ${email} and click the link in it to finish linking. After that, log in with your email once so your username keeps working too.`;
   } catch (problem) {
-    message.textContent = problem.message === 'Wrong username or password.' ? "That password isn't right." : problem.message;
+    message.textContent = problem.message;
   } finally {
     button.disabled = false;
   }
